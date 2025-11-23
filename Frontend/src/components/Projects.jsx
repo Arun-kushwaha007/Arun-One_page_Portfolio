@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { projects } from '../data/portfolio';
 import { motion, useScroll, useTransform, useMotionValue, useSpring } from 'framer-motion';
 import { Github, ExternalLink } from 'lucide-react';
@@ -39,7 +39,7 @@ const ProjectCard = ({ project }) => {
         rotateY,
         transformStyle: "preserve-3d",
       }}
-      className="relative h-[500px] w-[350px] md:w-[600px] flex-shrink-0 group perspective-1000"
+      className="relative h-[450px] w-full max-w-[350px] md:w-[600px] flex-shrink-0 group perspective-1000"
     >
       {/* Holographic Container */}
       <div className="absolute inset-0 bg-black/40 border border-neon-blue/30 rounded-xl overflow-hidden backdrop-blur-sm shadow-[0_0_30px_rgba(0,243,255,0.1)]">
@@ -108,14 +108,35 @@ const Projects = () => {
   });
 
   const x = useTransform(scrollYProgress, [0, 1], ["0%", "-75%"]);
+  
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  useEffect(() => {
+    const checkDesktop = () => setIsDesktop(window.innerWidth >= 768);
+    checkDesktop();
+    window.addEventListener('resize', checkDesktop);
+    return () => window.removeEventListener('resize', checkDesktop);
+  }, []);
 
   return (
-    <section ref={targetRef} id="projects" className="relative h-[300vh] bg-black/20">
-      <div className="sticky top-0 flex h-screen items-center overflow-hidden">
-        <motion.div style={{ x }} className="flex gap-12 px-24 items-center">
+    <section ref={targetRef} id="projects" className="relative md:h-[300vh] bg-black/20 py-20 md:py-0">
+      <div className="md:sticky md:top-0 flex flex-col md:flex-row md:h-screen items-center overflow-hidden">
+        
+        {/* Mobile Title (Visible only on mobile) */}
+        <div className="md:hidden w-full px-6 mb-12 text-center">
+          <h2 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-neon-blue to-neon-purple leading-tight">
+            HOLO <br/> DECK
+          </h2>
+          <p className="text-neon-blue font-mono mt-2 text-sm tracking-widest">
+            // PROJECT_ARCHIVE
+          </p>
+        </div>
+
+        {/* Desktop Horizontal Scroll Container */}
+        <motion.div style={{ x: isDesktop ? x : 0 }} className="flex flex-col md:flex-row gap-12 px-6 md:px-24 items-center w-full md:w-auto">
           
-          {/* Title Card */}
-          <div className="h-[500px] w-[400px] flex-shrink-0 flex flex-col justify-center z-10">
+          {/* Desktop Title Card */}
+          <div className="hidden md:flex h-[500px] w-[400px] flex-shrink-0 flex-col justify-center z-10">
              <h2 className="text-6xl md:text-8xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-neon-blue to-neon-purple leading-tight">
               HOLO <br/> DECK
             </h2>
@@ -125,7 +146,9 @@ const Projects = () => {
           </div>
 
           {projects.map((project) => (
-            <ProjectCard key={project.id} project={project} />
+            <div key={project.id} className="w-full md:w-auto flex justify-center">
+              <ProjectCard project={project} />
+            </div>
           ))}
         </motion.div>
       </div>

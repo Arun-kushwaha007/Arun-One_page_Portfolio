@@ -19,8 +19,8 @@ const Navbar = () => {
   ];
 
   return (
-    <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100]">
-      <div className="flex items-end gap-2 px-4 py-3 bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl shadow-neon-blue/10">
+    <div className="fixed bottom-4 md:bottom-8 left-1/2 -translate-x-1/2 z-[100] w-[90%] md:w-auto max-w-md md:max-w-none">
+      <div className="flex items-end justify-between md:justify-center gap-1 md:gap-2 px-3 py-2 md:px-4 md:py-3 bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl shadow-neon-blue/10">
         {navLinks.map((link, index) => {
           const isHovered = hoveredIndex === index;
           
@@ -37,13 +37,13 @@ const Navbar = () => {
             >
               <motion.div
                 animate={{
-                  scale: isHovered ? 1.5 : 1,
-                  y: isHovered ? -10 : 0,
+                  scale: isHovered ? 1.2 : 1, // Reduced scale for mobile
+                  y: isHovered ? -5 : 0,
                 }}
                 transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                className="p-3 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-neon-blue/50 transition-colors relative"
+                className="p-2 md:p-3 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-neon-blue/50 transition-colors relative"
               >
-                <link.icon className={`w-5 h-5 ${isHovered ? 'text-neon-blue' : 'text-gray-400'}`} />
+                <link.icon className={`w-4 h-4 md:w-5 md:h-5 ${isHovered ? 'text-neon-blue' : 'text-gray-400'}`} />
                 
                 {/* Reflection/Glow */}
                 {isHovered && (
@@ -54,14 +54,14 @@ const Navbar = () => {
                 )}
               </motion.div>
 
-              {/* Tooltip */}
+              {/* Tooltip - Hidden on mobile */}
               <AnimatePresence>
                 {isHovered && (
                   <motion.div
                     initial={{ opacity: 0, y: 10, x: '-50%' }}
                     animate={{ opacity: 1, y: -45, x: '-50%' }}
                     exit={{ opacity: 0, y: 10, x: '-50%' }}
-                    className="absolute left-1/2 top-0 px-3 py-1 bg-black/80 border border-neon-blue/30 rounded-lg text-xs text-neon-blue whitespace-nowrap backdrop-blur-md pointer-events-none"
+                    className="hidden md:block absolute left-1/2 top-0 px-3 py-1 bg-black/80 border border-neon-blue/30 rounded-lg text-xs text-neon-blue whitespace-nowrap backdrop-blur-md pointer-events-none"
                   >
                     {link.name}
                   </motion.div>
@@ -72,7 +72,7 @@ const Navbar = () => {
         })}
 
         {/* Matrix Toggle */}
-        <div className="w-px h-8 bg-white/10 mx-2" />
+        <div className="w-px h-6 md:h-8 bg-white/10 mx-1 md:mx-2" />
         
         <button
           onClick={() => {
@@ -83,15 +83,15 @@ const Navbar = () => {
         >
           <motion.div
             animate={{
-              scale: isMatrixMode ? 1.2 : 1,
+              scale: isMatrixMode ? 1.1 : 1,
             }}
-            className={`p-3 rounded-xl border transition-colors relative ${
+            className={`p-2 md:p-3 rounded-xl border transition-colors relative ${
               isMatrixMode 
                 ? 'bg-green-900/20 border-green-500 text-green-500 shadow-[0_0_15px_rgba(0,255,0,0.3)]' 
                 : 'bg-white/5 border-white/5 text-gray-400 hover:text-white'
             }`}
           >
-            <Terminal className="w-5 h-5" />
+            <Terminal className="w-4 h-4 md:w-5 md:h-5" />
           </motion.div>
         </button>
       </div>
