@@ -109,6 +109,22 @@ export const experiences = [
 
 export const projects = [
   {
+    id: "pdf-csv-pipeline",
+    title: "Enterprise PDF to CSV Pipeline",
+    tech: ["React", "Node.js", "GCP Document AI", "Cloud SQL", "Docker", "Pandas"],
+    description: "High-throughput document processing pipeline converting batch PDFs to structured CSV/SQL data.",
+    points: [
+      "Built a production pipeline processing 5,000+ documents per batch using GCP Document AI.",
+      "Designed dynamic worker scaling (2→75 workers) with rate-limiting for API quotas.",
+      "Optimized database performance by transforming individual writes into bulk transactional operations."
+    ],
+    links: {
+      github: "https://github.com/Arun-kushwaha007/pdf-to-csv/", 
+     
+    },
+    image: "/assets/pdf2csv.png"
+  },
+  {
     id: "collabnest",
     title: "CollabNest — Real-Time Collaboration Platform",
     tech: ["Node.js", "Socket.IO", "Redis", "MongoDB", "Vite", "Firebase"],
