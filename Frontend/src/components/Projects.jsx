@@ -1,103 +1,83 @@
-import { useRef, useState, useEffect } from 'react';
+import { useRef } from 'react';
 import { projects } from '../data/portfolio';
-import { motion, useScroll, useTransform, useMotionValue, useSpring } from 'framer-motion';
-import { Github, ExternalLink } from 'lucide-react';
+import { motion, useScroll, useTransform, useSpring, useMotionValue } from 'framer-motion';
+import { Github, ExternalLink, ArrowRight } from 'lucide-react';
 
-const ProjectCard = ({ project }) => {
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
-
-  const mouseXSpring = useSpring(x);
-  const mouseYSpring = useSpring(y);
-
-  const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], ["15deg", "-15deg"]);
-  const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], ["-15deg", "15deg"]);
-
-  const handleMouseMove = (e) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const width = rect.width;
-    const height = rect.height;
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
-    const xPct = mouseX / width - 0.5;
-    const yPct = mouseY / height - 0.5;
-    x.set(xPct);
-    y.set(yPct);
-  };
-
-  const handleMouseLeave = () => {
-    x.set(0);
-    y.set(0);
-  };
-
+const CinematicCard = ({ project }) => {
   return (
-    <motion.div
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      style={{
-        rotateX,
-        rotateY,
-        transformStyle: "preserve-3d",
-      }}
-      className="relative h-[450px] w-full max-w-[350px] md:w-[600px] flex-shrink-0 group perspective-1000"
-    >
-      {/* Holographic Container */}
-      <div className="absolute inset-0 bg-black/40 border border-neon-blue/30 rounded-xl overflow-hidden backdrop-blur-sm shadow-[0_0_30px_rgba(0,243,255,0.1)]">
+    <div className="group relative w-[85vw] md:w-[800px] h-[500px] flex-shrink-0 bg-black/40 border border-white/10 rounded-2xl overflow-hidden backdrop-blur-sm hover:border-neon-blue/50 transition-all duration-500">
+      
+      {/* Background Glow */}
+      <div className="absolute inset-0 bg-gradient-to-r from-neon-blue/5 to-neon-purple/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
+
+      <div className="flex flex-col h-full md:flex-row">
         
-        {/* Projector Light Effect */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-1 bg-neon-blue shadow-[0_0_50px_#00f3ff] z-20" />
-        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-neon-blue/10 to-transparent pointer-events-none z-10" />
-
-        {/* Image with Scanlines */}
-        <div className="absolute inset-0 z-0">
-          <div 
-            className="w-full h-full bg-cover bg-center opacity-60 group-hover:opacity-40 transition-opacity duration-500"
-            style={{ backgroundImage: `url(${project.image})` }}
-          />
-          <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] z-10 bg-[length:100%_4px,6px_100%] pointer-events-none" />
-        </div>
-
-        {/* Content Overlay */}
-        <div className="absolute inset-0 flex flex-col justify-end p-8 z-20 translate-z-20">
-          <h3 className="text-3xl font-bold text-white mb-2 text-shadow-neon">{project.title}</h3>
+        {/* Image Section (60%) */}
+        <div className="h-1/2 md:h-full md:w-3/5 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gray-900 animate-pulse z-0" /> {/* Loading state bg */}
+          <div className="absolute inset-0 z-10 bg-gradient-to-t md:bg-gradient-to-r from-black/80 via-transparent to-transparent" />
           
-          <div className="flex flex-wrap gap-2 mb-4">
-            {project.tech.slice(0, 4).map((t) => (
-              <span key={t} className="text-xs font-mono border border-neon-purple/50 text-neon-purple px-2 py-1 rounded bg-black/50 backdrop-blur-md">
-                {t}
-              </span>
-            ))}
-          </div>
-
-          <p className="text-gray-300 mb-6 line-clamp-3 font-mono text-sm bg-black/50 p-2 rounded">
-            {project.description}
-          </p>
-
-          <div className="flex gap-4">
-            {project.links.github && (
-              <a
-                href={project.links.github}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 text-white hover:text-neon-green transition-colors z-30"
-              >
-                <Github className="w-5 h-5" /> <span className="font-mono">SOURCE</span>
-              </a>
-            )}
-            {project.links.demo && (
-              <a
-                href={project.links.demo}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 text-white hover:text-neon-blue transition-colors z-30"
-              >
-                <ExternalLink className="w-5 h-5" /> <span className="font-mono">DEPLOY</span>
-              </a>
-            )}
+          <img 
+            src={project.image} 
+            alt={project.title}
+            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+          />
+          
+          {/* Tech Overlay on Image */}
+          <div className="absolute bottom-4 left-4 z-20 flex gap-2">
+             <div className="px-2 py-1 bg-black/70 backdrop-blur-md border border-white/10 rounded text-xs font-mono text-neon-blue">
+                // {project.tech[0]}
+             </div>
           </div>
         </div>
+
+        {/* Content Section (40%) - The "Glass Panel" */}
+        <div className="h-1/2 md:h-full md:w-2/5 p-6 md:p-8 flex flex-col justify-center relative bg-black/20 md:bg-transparent">
+           {/* Decorative Lines */}
+           <div className="absolute top-0 right-0 w-20 h-20 border-t border-r border-white/10 rounded-tr-2xl opacity-50" />
+           <div className="absolute bottom-0 left-0 w-20 h-20 border-b border-l border-white/10 rounded-bl-2xl opacity-50" />
+
+           <div className="mb-auto">
+              <h3 className="text-2xl md:text-3xl font-bold text-white mb-3 leading-tight group-hover:text-neon-blue transition-colors">
+                {project.title}
+              </h3>
+              
+              <div className="flex flex-wrap gap-2 mb-6">
+                {project.tech.slice(0, 4).map(t => (
+                  <span key={t} className="text-xs font-mono text-gray-500 border border-white/5 px-2 py-0.5 rounded">
+                    {t}
+                  </span>
+                ))}
+              </div>
+
+              <p className="text-gray-400 text-sm md:text-base leading-relaxed line-clamp-4">
+                {project.description}
+              </p>
+           </div>
+
+           {/* Action Area */}
+           <div className="flex items-center gap-6 mt-6 md:mt-0 pt-6 border-t border-white/5">
+              <div className="flex gap-4">
+                 {project.links.github && (
+                   <a href={project.links.github} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-sm font-mono text-white hover:text-neon-green transition-colors">
+                     <Github className="w-4 h-4" /> SOURCE
+                   </a>
+                 )}
+                 {project.links.demo && (
+                   <a href={project.links.demo} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-sm font-mono text-white hover:text-neon-blue transition-colors">
+                     <ExternalLink className="w-4 h-4" /> LIVE
+                   </a>
+                 )}
+              </div>
+              
+              <div className="ml-auto w-8 h-8 rounded-full border border-white/10 flex items-center justify-center group-hover:bg-neon-blue group-hover:border-neon-blue transition-all">
+                <ArrowRight className="w-4 h-4 text-gray-500 group-hover:text-black -rotate-45 group-hover:rotate-0 transition-transform duration-300" />
+              </div>
+           </div>
+        </div>
+
       </div>
-    </motion.div>
+    </div>
   );
 };
 
@@ -107,49 +87,60 @@ const Projects = () => {
     target: targetRef,
   });
 
-  const x = useTransform(scrollYProgress, [0, 1], ["0%", "-75%"]);
-  
-  const [isDesktop, setIsDesktop] = useState(false);
+  // Smooth scroll physics
+  const scaleX = useSpring(scrollYProgress, {
+    stiffness: 100,
+    damping: 30,
+    restDelta: 0.001
+  });
 
-  useEffect(() => {
-    const checkDesktop = () => setIsDesktop(window.innerWidth >= 768);
-    checkDesktop();
-    window.addEventListener('resize', checkDesktop);
-    return () => window.removeEventListener('resize', checkDesktop);
-  }, []);
+  // Transform scroll progress to horizontal translation
+  const x = useTransform(scaleX, [0, 1], ["0%", "-85%"]);
+  
+  // Parallax for text
+  const titleX = useTransform(scaleX, [0, 1], ["0%", "50%"]);
+  const opacity = useTransform(scrollYProgress, [0.8, 1], [1, 0]);
 
   return (
-    <section ref={targetRef} id="projects" className="relative md:h-[300vh] bg-black/20 py-20 md:py-0">
-      <div className="md:sticky md:top-0 flex flex-col md:flex-row md:h-screen items-center overflow-hidden">
+    <section ref={targetRef} id="projects" className="relative h-[300vh] bg-black/20">
+      <div className="sticky top-0 h-screen flex items-center overflow-hidden">
         
-        {/* Mobile Title (Visible only on mobile) */}
-        <div className="md:hidden w-full px-6 mb-12 text-center">
-          <h2 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-neon-blue to-neon-purple leading-tight">
-            HOLO <br/> DECK
-          </h2>
-          <p className="text-neon-blue font-mono mt-2 text-sm tracking-widest">
-            // PROJECT_ARCHIVE
-          </p>
+        {/* Background Visuals */}
+        <div className="absolute inset-0 pointer-events-none">
+           <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-neon-purple/5 blur-[120px] rounded-full mix-blend-screen" />
+           <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-neon-blue/5 blur-[120px] rounded-full mix-blend-screen" />
         </div>
 
-        {/* Desktop Horizontal Scroll Container */}
-        <motion.div style={{ x: isDesktop ? x : 0 }} className="flex flex-col md:flex-row gap-12 px-6 md:px-24 items-center w-full md:w-auto">
+        {/* Content Rail */}
+        <motion.div style={{ x }} className="flex gap-12 px-6 md:px-24 w-max items-center">
           
-          {/* Desktop Title Card */}
-          <div className="hidden md:flex h-[500px] w-[400px] flex-shrink-0 flex-col justify-center z-10">
-             <h2 className="text-6xl md:text-8xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-neon-blue to-neon-purple leading-tight">
-              HOLO <br/> DECK
-            </h2>
-            <p className="text-neon-blue font-mono mt-4 text-xl tracking-widest">
-              // PROJECT_ARCHIVE
-            </p>
+          {/* Introduction Card */}
+          <div className="w-[85vw] md:w-[600px] h-[500px] flex-shrink-0 flex flex-col justify-center px-4 md:px-0">
+             <motion.div style={{ x: titleX, opacity }}>
+                <h2 className="text-5xl md:text-8xl font-bold mb-6 text-transparent bg-clip-text bg-gradient-to-r from-neon-blue to-neon-purple leading-none">
+                  SELECTED <br /> WORKS
+                </h2>
+                <div className="h-1 w-24 bg-neon-green mb-6" />
+                <p className="text-xl text-gray-400 max-w-md font-light leading-relaxed">
+                  A collection of advanced web applications, system designs, and AI integrations.
+                  <span className="block mt-4 text-sm font-mono text-neon-blue">
+                    // DRAG_OR_SCROLL_TO_EXPLORE
+                  </span>
+                </p>
+             </motion.div>
           </div>
 
+          {/* Project List */}
           {projects.map((project) => (
-            <div key={project.id} className="w-full md:w-auto flex justify-center">
-              <ProjectCard project={project} />
-            </div>
+             <CinematicCard key={project.id} project={project} />
           ))}
+
+          {/* End Card */}
+           <div className="w-[85vw] md:w-[400px] h-[500px] flex-shrink-0 flex flex-col justify-center items-center text-center">
+              <h3 className="text-4xl font-bold text-gray-700 mb-4">MORE COMING SOON</h3>
+              <p className="text-gray-500 font-mono text-sm">// SYSTEM_UPGRADE_PENDING</p>
+           </div>
+
         </motion.div>
       </div>
     </section>

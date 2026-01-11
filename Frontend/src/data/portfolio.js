@@ -61,17 +61,18 @@ export const skills = {
 };
 
 export const experiences = [
-  // {
-  //   id: "creditmitra",
-  //   role: "SDE Intern",
-  //   company: "CreditMitra",
-  //   period: "Nov 2024 – Present",
-  //   description: [
-  //     "Currently working on frontend development for company web pages.",
-  //     "Will transition to backend development and core platform features."
-  //   ]
-  // },
-  
+  {
+    id: "creditmitra-intern",
+    role: "Software Developer Intern",
+    company: "CreditMitra ",
+    period: "Nov 2025 – Present",
+    description: [
+        "Built core frontend modules for a fintech web platform using Next.js, converting business wireframes into responsive user interfaces.",
+        "Integrated third-party APIs for credit score checks and customer inquiry forms, handling asynchronous data flows and UI state management.",
+        "Collaborated with team members to structure reusable UI components and application routing.",
+        "Worked closely with senior developers to integrate frontend features with backend REST APIs."
+      ]
+  },
    {
       id: "freelance-pdf",
       role: "Full-Stack Software Engineer (Freelance)",
