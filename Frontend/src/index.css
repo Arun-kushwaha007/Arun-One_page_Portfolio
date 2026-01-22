@@ -7,7 +7,8 @@
   --color-neon-blue: #00f3ff;
   --color-neon-purple: #bc13fe;
   --color-neon-green: #0aff0a;
-  --color-bg-dark: #050505;
+  --color-bg-dark: #020202;
+  --color-glass-border: rgba(255, 255, 255, 0.08);
 }
 
 body.matrix-mode {
@@ -40,9 +41,17 @@ body.matrix-mode ::selection {
 body {
   font-family: var(--font-body);
   background-color: var(--color-bg-dark);
+  background-image: radial-gradient(
+      circle at 50% 0%,
+      #1a1a1a 0%,
+      transparent 40%
+    ),
+    radial-gradient(circle at 100% 50%, #0a0a0a 0%, transparent 30%);
   color: white;
   cursor: none; /* Hide default cursor for custom one */
   overflow-x: hidden;
+  letter-spacing: -0.01em;
+  line-height: 1.6;
 }
 
 h1,
@@ -74,15 +83,11 @@ h6 {
 
 /* Tech Frame Clip Paths */
 .clip-path-tech-frame {
-  clip-path: polygon(
-    10% 0, 100% 0, 100% 90%, 90% 100%, 0 100%, 0 10%
-  );
+  clip-path: polygon(10% 0, 100% 0, 100% 90%, 90% 100%, 0 100%, 0 10%);
 }
 
 .clip-path-tech-inner {
-  clip-path: polygon(
-    10% 0, 100% 0, 100% 90%, 90% 100%, 0 100%, 0 10%
-  );
+  clip-path: polygon(10% 0, 100% 0, 100% 90%, 90% 100%, 0 100%, 0 10%);
 }
 
 /* Glitch Effect Utilities */

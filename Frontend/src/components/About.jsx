@@ -1,9 +1,8 @@
 import { useRef, useEffect } from 'react';
 import { 
   motion, 
-  useMotionTemplate, 
   useMotionValue, 
-  useSpring,
+  useMotionTemplate,
   animate,
   useInView
 } from 'framer-motion';
@@ -20,7 +19,7 @@ import {
   Database,
   ArrowRight
 } from 'lucide-react';
-import { profile, skills, education, projects, experiences } from '../data/portfolio';
+import { profile, skills, education } from '../data/portfolio';
 import { Section } from './ui/Section';
 
 const AnimatedCounter = ({ value, duration = 1.5 }) => {
@@ -227,9 +226,10 @@ const About = () => {
           
           {/* 7. Connect CTA */}
           <SpotlightCard className="md:col-span-1 p-6 flex flex-col justify-center items-center text-center group cursor-pointer hover:bg-neon-blue/5 transition-colors" delay={0.6}>
-              <div 
+              <button 
                 onClick={scrollToContact}
-                className="w-full h-full flex flex-col items-center justify-center p-2 rounded-xl transition-all"
+                className="w-full h-full flex flex-col items-center justify-center p-2 rounded-xl transition-all bg-transparent border-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-neon-blue/50"
+                aria-label="Scroll to contact section"
               >
                   <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                       <ArrowRight className="w-6 h-6 text-white group-hover:-rotate-45 transition-transform duration-300" />
@@ -239,19 +239,20 @@ const About = () => {
                   
                   <div className="flex gap-3 justify-center">
                     {Object.entries(profile.social).map(([platform, link]) => (
-                        <div 
+                        <a 
                             key={platform} 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              window.open(link, '_blank');
-                            }}
+                            href={link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
                             className="text-gray-500 hover:text-neon-blue transition-colors cursor-pointer"
+                            aria-label={`Visit my ${platform} profile`}
                         >
                             <Globe className="w-4 h-4" /> 
-                        </div>
+                        </a>
                     ))}
                   </div>
-              </div>
+              </button>
           </SpotlightCard>
 
         </div>

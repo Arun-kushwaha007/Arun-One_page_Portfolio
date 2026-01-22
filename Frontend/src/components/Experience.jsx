@@ -1,89 +1,119 @@
+import { useRef } from 'react';
 import { experiences } from '../data/portfolio';
-import { Section } from './ui/Section';
-import { motion } from 'framer-motion';
+import { motion, useScroll, useTransform, useSpring } from 'framer-motion';
 import GlitchText from './ui/GlitchText';
 
-const Experience = () => {
+const ExperienceCard = ({ exp, index }) => {
   return (
-    <Section id="experience" className="">
-      <h2 className="text-4xl md:text-6xl font-bold mb-20 text-center">
-        <span className="border-b-4 border-neon-green text-transparent bg-clip-text bg-gradient-to-r from-neon-green to-emerald-500">
-          MISSION LOG
-        </span>
-      </h2>
+    <div className="relative w-[80vw] md:w-[600px] flex-shrink-0 p-8 border border-white/10 bg-black/80 backdrop-blur-md rounded-2xl group overflow-hidden">
+       {/* Cyberpunk Decor */}
+       <div className="absolute top-0 right-0 p-4 opacity-50">
+          <div className="w-20 h-20 border-t-2 border-r-2 border-neon-purple rounded-tr-2xl" />
+       </div>
+       <div className="absolute bottom-0 left-0 p-4 opacity-50">
+          <div className="w-20 h-20 border-b-2 border-l-2 border-neon-blue rounded-bl-2xl" />
+       </div>
 
-      <div className="relative max-w-4xl mx-auto">
-        {/* Data Line */}
-        <div className="absolute left-0 md:left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-neon-blue via-neon-purple to-transparent -translate-x-1/2 hidden md:block opacity-30" />
+       {/* Background Grid */}
+       <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,0,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,0,0.03)_1px,transparent_1px)] bg-[size:20px_20px]" />
 
-        <div className="space-y-20">
-          {experiences.map((exp, index) => (
-            <motion.div
-              key={exp.id}
-              initial={{ opacity: 0, x: index % 2 === 0 ? -50 : 50 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true, margin: "-50px" }}
-              transition={{ duration: 0.5, delay: index * 0.2 }}
-              className={`flex flex-col md:flex-row gap-12 items-center relative ${
-                index % 2 === 0 ? 'md:flex-row-reverse' : ''
-              }`}
-            >
-              {/* Connector Line (Mobile Hidden) */}
-              <div className="hidden md:block absolute left-1/2 top-1/2 w-12 h-px bg-neon-blue/50 -translate-x-1/2" 
-                   style={{ 
-                     left: index % 2 === 0 ? 'calc(50% + 24px)' : 'calc(50% - 24px)',
-                     width: '48px'
-                   }} 
-              />
-
-              {/* Central Node */}
-              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-black border-2 border-neon-green rounded-full z-10 hidden md:block shadow-[0_0_10px_#0aff0a]">
-                <div className="absolute inset-0 bg-neon-green animate-ping opacity-50 rounded-full" />
-              </div>
-
-              {/* Content Card */}
-              <div className="flex-1 w-full group">
-                <div className="relative bg-black/60 border border-white/10 p-6 rounded-xl overflow-hidden hover:border-neon-blue/50 transition-all duration-300">
-                  {/* Scanning Line */}
-                  <div className="absolute top-0 left-0 w-full h-1 bg-neon-blue/30 shadow-[0_0_15px_#00f3ff] -translate-y-full group-hover:animate-scan" />
-                  
-                  {/* Corner Accents */}
-                  <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-neon-blue" />
-                  <div className="absolute top-0 right-0 w-2 h-2 border-t border-r border-neon-blue" />
-                  <div className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-neon-blue" />
-                  <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-neon-blue" />
-
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <GlitchText text={exp.role} className="text-xl md:text-2xl mb-1 block" />
-                      <div className="text-neon-purple font-mono text-sm tracking-widest">
-                        @{exp.company.toUpperCase()}
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-xs text-gray-500 font-mono mb-1">STATUS: COMPLETED</div>
-                      <div className="text-neon-green font-mono text-sm">{exp.period}</div>
-                    </div>
-                  </div>
-
-                  <ul className="space-y-2">
-                    {exp.description.map((item, i) => (
-                      <li key={i} className="text-gray-400 text-sm font-mono flex items-start gap-3">
-                        <span className="text-neon-blue mt-1">➜</span>
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
+       <div className="relative z-10">
+          <div className="flex justify-between items-start mb-6">
+             <div>
+                <span className="text-neon-blue font-mono text-xs tracking-[0.2em] mb-2 block">
+                  MISSION_ID: 00{index + 1}
+                </span>
+                <GlitchText text={exp.role} className="text-2xl md:text-3xl font-bold text-white mb-2" />
+                <div className="text-neon-purple font-mono text-lg">@{exp.company}</div>
+             </div>
+             <div className="text-right">
+                <div className="px-3 py-1 border border-neon-green/30 bg-neon-green/10 rounded text-neon-green font-mono text-sm shadow-[0_0_10px_rgba(10,255,10,0.2)]">
+                   {exp.period}
                 </div>
-              </div>
+             </div>
+          </div>
 
-              {/* Empty Space for Layout Balance */}
-              <div className="flex-1 hidden md:block" />
-            </motion.div>
-          ))}
-        </div>
-      </div>
-    </Section>
+          <div className="h-px w-full bg-gradient-to-r from-transparent via-white/20 to-transparent mb-6" />
+
+          <ul className="space-y-4">
+             {exp.description.map((item, i) => (
+                <li key={i} className="flex items-start gap-4 text-gray-300 font-mono text-sm leading-relaxed">
+                   <span className="text-neon-blue mt-1">>></span>
+                   {item}
+                </li>
+             ))}
+          </ul>
+       </div>
+    </div>
+  );
+};
+
+const Experience = () => {
+  const targetRef = useRef(null);
+  const { scrollYProgress } = useScroll({
+    target: targetRef,
+  });
+
+  const x = useTransform(scrollYProgress, [0, 1], ["0%", "-75%"]);
+  
+  // Parallax elements
+  const bgX = useTransform(scrollYProgress, [0, 1], ["0%", "20%"]);
+  const titleX = useTransform(scrollYProgress, [0, 1], ["0%", "50%"]);
+
+  return (
+    <section ref={targetRef} id="experience" className="relative h-[300vh] bg-black">
+       <div className="sticky top-0 h-screen flex flex-col justify-center overflow-hidden">
+          
+          {/* Background visuals */}
+          <motion.div style={{ x: bgX }} className="absolute inset-0 opacity-20 pointer-events-none">
+             <div className="absolute top-1/4 left-0 w-[40vw] h-px bg-neon-purple shadow-[0_0_20px_#bc13fe]" />
+             <div className="absolute bottom-1/3 right-0 w-[60vw] h-px bg-neon-blue shadow-[0_0_20px_#00f3ff]" />
+          </motion.div>
+
+          {/* Section Title - Fixed then moves */}
+          <motion.div style={{ x: titleX }} className="px-8 md:px-24 mb-12 relative z-10">
+             <h2 className="text-6xl md:text-9xl font-bold opacity-10 text-transparent bg-clip-text bg-gradient-to-r from-white to-transparent">
+                TIMELINE
+             </h2>
+             <div className="absolute top-1/2 left-8 md:left-24 -translate-y-1/2">
+                <h3 className="text-3xl md:text-5xl font-bold text-white">
+                   <span className="text-neon-green mr-4">>>></span>
+                   Carrier Trajectory
+                </h3>
+             </div>
+          </motion.div>
+
+          {/* Horizontal Scroll Container */}
+          <motion.div style={{ x }} className="flex gap-12 px-8 md:px-24 w-max items-center">
+             
+             {/* Start Node */}
+             <div className="w-[300px] flex-shrink-0 text-gray-500 font-mono text-sm">
+                <div className="w-4 h-4 bg-neon-green rounded-full shadow-[0_0_15px_#0aff0a] mb-4" />
+                <p>INITIALIZING_CAREER_PATH...</p>
+             </div>
+
+             {experiences.map((exp, index) => (
+                <div key={exp.id} className="relative group">
+                   {/* Connector Line */}
+                   <div className="absolute top-1/2 -left-12 w-12 h-px bg-white/20" />
+                   
+                   <ExperienceCard exp={exp} index={index} />
+                </div>
+             ))}
+
+             {/* Future Node */}
+             <div className="w-[400px] flex-shrink-0 flex items-center justify-center p-12 border border-dashed border-white/20 rounded-2xl bg-white/5 mx-12">
+                <div className="text-center">
+                   <div className="inline-block px-4 py-2 border border-neon-blue text-neon-blue font-mono mb-4 animate-pulse">
+                      LOADING_NEXT_CHAPTER...
+                   </div>
+                   <p className="text-gray-400 text-sm">Open for Senior Roles & Leadership Opportunities</p>
+                </div>
+             </div>
+
+          </motion.div>
+       </div>
+    </section>
   );
 };
 

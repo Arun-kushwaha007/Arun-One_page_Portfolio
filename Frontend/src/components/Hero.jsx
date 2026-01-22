@@ -1,20 +1,37 @@
-import { motion } from 'framer-motion';
+import { motion as Motion, useScroll, useTransform } from 'framer-motion';
 import { profile } from '../data/portfolio';
 import { ChevronDown, Github, Linkedin, Mail } from 'lucide-react';
 import Hero3DObject from './Hero3DObject';
+import { useRef } from 'react';
+import { useCursor } from '../context/CursorContext.jsx';
 
 const Hero = () => {
+  const ref = useRef(null);
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start start", "end start"]
+  });
+  const { setCursorType } = useCursor();
+
+  const yText = useTransform(scrollYProgress, [0, 1], ["0%", "50%"]);
+  const yVisual = useTransform(scrollYProgress, [0, 1], ["0%", "-30%"]);
+  const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
+
   return (
-    <section className="min-h-screen flex items-center justify-center relative overflow-hidden px-6">
+    <section ref={ref} className="min-h-screen flex items-center justify-center relative overflow-hidden px-6">
       <div className="z-10 w-full max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center pt-20 md:pt-0">
         
         {/* Text Content */}
-        <div className="text-left order-2 md:order-1">
-          <motion.div 
+        <div 
+            className="text-left order-2 md:order-1 relative z-20"
+            onMouseEnter={() => setCursorType('text')}
+            onMouseLeave={() => setCursorType('default')}
+        >
+          <Motion.div 
+            style={{ y: yText, opacity }}
             initial={{ opacity: 0, x: -50 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8 }}
-            className="relative z-20"
           >
             <h2 className="text-lg md:text-2xl text-neon-green font-mono mb-2 md:mb-4">
               &lt;Hello_World /&gt;
@@ -56,31 +73,33 @@ const Hero = () => {
                 <Mail className="w-5 h-5 md:w-6 md:h-6 text-white group-hover:text-neon-blue" />
               </a>
             </div>
-          </motion.div>
+          </Motion.div>
         </div>
 
         {/* 3D/Visual Element Placeholder (or Image) */}
-        <div className="order-1 md:order-2 flex justify-center md:justify-end relative h-[300px] md:h-auto">
-          <motion.div
+        <div className="order-1 md:order-2 flex justify-center md:justify-end relative h-[300px] md:h-auto z-10">
+          <Motion.div
+            style={{ y: yVisual, opacity }}
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 1 }}
-            className="relative z-10 w-full h-full flex items-center justify-center"
+            className="relative w-full h-full flex items-center justify-center"
           >
              <div className="absolute inset-0 bg-gradient-to-r from-neon-blue to-neon-purple rounded-full blur-3xl opacity-20 animate-pulse"></div>
             <Hero3DObject />
-          </motion.div>
+          </Motion.div>
         </div>
       </div>
 
-      <motion.div
+      <Motion.div
+        style={{ opacity }}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 2, duration: 1 }}
         className="absolute bottom-10 left-1/2 -translate-x-1/2"
       >
         <ChevronDown className="w-8 h-8 text-white/50 animate-bounce" />
-      </motion.div>
+      </Motion.div>
     </section>
   );
 };
