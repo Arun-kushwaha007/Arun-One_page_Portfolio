@@ -9,6 +9,42 @@
   --color-neon-green: #0aff0a;
   --color-bg-dark: #020202;
   --color-glass-border: rgba(255, 255, 255, 0.08);
+  
+  /* Neo-Brutalist / Cyber Extras */
+  --shadow-neo: 4px 4px 0px 0px var(--color-neon-blue);
+  --shadow-neo-purple: 4px 4px 0px 0px var(--color-neon-purple);
+  --shadow-neo-green: 4px 4px 0px 0px var(--color-neon-green);
+}
+
+@keyframes liquid-motion {
+  0% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
+  50% { border-radius: 30% 60% 70% 30% / 50% 60% 30% 60%; }
+  100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
+}
+
+@keyframes fluid-blob {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(30px, -50px) scale(1.1); }
+  66% { transform: translate(-20px, 20px) scale(0.9); }
+}
+
+.liquid-glass {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.neo-shadow {
+  box-shadow: var(--shadow-neo);
+}
+
+.neo-shadow-purple {
+  box-shadow: var(--shadow-neo-purple);
+}
+
+.neo-shadow-green {
+  box-shadow: var(--shadow-neo-green);
 }
 
 body.matrix-mode {
@@ -205,3 +241,4 @@ h6 {
     clip: rect(5px, 9999px, 19px, 0);
   }
 }
+

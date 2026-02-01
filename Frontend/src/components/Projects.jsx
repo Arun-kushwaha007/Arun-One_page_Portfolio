@@ -25,8 +25,15 @@ const ProjectCard = ({ project, index, targetScale }) => {
     <div ref={container} className="h-screen flex items-center justify-center sticky top-0 px-4 md:px-0">
       <Motion.div 
         style={{ scale, skewX: skew, rotateX: skew, top: `calc(${index * 25}px)` }} 
-        className="relative flex flex-col md:flex-row h-[70vh] w-full max-w-7xl rounded-3xl bg-black border border-white/10 overflow-hidden origin-top shadow-2xl"
+        className="relative flex flex-col md:flex-row h-[70vh] w-full max-w-7xl rounded-3xl bg-black border-2 border-white/20 overflow-hidden origin-top neo-shadow-purple"
       >
+        {/* Liquid Glass Layer */}
+        <div className="absolute inset-0 overflow-hidden opacity-10 pointer-events-none z-0">
+          <div 
+            className="absolute -top-[10%] -left-[10%] w-[50%] h-[50%] bg-neon-purple/40 blur-[100px] animate-[fluid-blob_15s_infinite_linear]"
+            style={{ borderRadius: '60% 40% 30% 70% / 60% 30% 70% 40%' }}
+          />
+        </div>
         
         {/* Project Image Area (60%) */}
         <div 

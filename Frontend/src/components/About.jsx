@@ -42,7 +42,7 @@ const AnimatedCounter = ({ value, duration = 1.5 }) => {
   return <span ref={ref} className="text-4xl font-bold text-white mb-1">0+</span>;
 };
 
-const SpotlightCard = ({ children, className = "", delay = 0 }) => {
+const SpotlightCard = ({ children, className = "", delay = 0, neoColor = "blue" }) => {
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
 
@@ -52,15 +52,29 @@ const SpotlightCard = ({ children, className = "", delay = 0 }) => {
     mouseY.set(clientY - top);
   }
 
+  const neoShadowClass = neoColor === "blue" ? "neo-shadow" : neoColor === "purple" ? "neo-shadow-purple" : "neo-shadow-green";
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.5, delay }}
-      className={`group relative border border-white/10 bg-gray-900/40 overflow-hidden rounded-xl ${className}`}
+      className={`group relative border-2 border-white/20 bg-gray-900/40 overflow-hidden rounded-xl transition-all duration-300 hover:border-white/40 ${neoShadowClass} ${className}`}
       onMouseMove={handleMouseMove}
     >
+       {/* Liquid Glass Background Blobs */}
+       <div className="absolute inset-0 overflow-hidden opacity-20 pointer-events-none">
+          <div 
+            className="absolute -top-[20%] -left-[10%] w-[60%] h-[60%] bg-neon-blue/30 blur-[80px] animate-[fluid-blob_10s_infinite_linear]"
+            style={{ borderRadius: '60% 40% 30% 70% / 60% 30% 70% 40%' }}
+          />
+          <div 
+            className="absolute -bottom-[20%] -right-[10%] w-[60%] h-[60%] bg-neon-purple/20 blur-[80px] animate-[fluid-blob_12s_infinite_linear_reverse]"
+            style={{ borderRadius: '30% 60% 70% 30% / 50% 60% 30% 60%' }}
+          />
+       </div>
+
        {/* Noise Texture */}
        <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }} />
       
@@ -70,13 +84,20 @@ const SpotlightCard = ({ children, className = "", delay = 0 }) => {
           background: useMotionTemplate`
             radial-gradient(
               650px circle at ${mouseX}px ${mouseY}px,
-              rgba(0, 243, 255, 0.1),
+              rgba(0, 243, 255, 0.15),
               transparent 80%
             )
           `,
         }}
       />
-      <div className="relative h-full">{children}</div>
+      
+      {/* Neo-Brutalist Hardware Labels */}
+      <div className="absolute top-2 right-2 flex gap-1 z-30 opacity-40 group-hover:opacity-100 transition-opacity">
+        <span className="text-[8px] font-mono py-0.5 px-1 bg-white/10 text-white leading-none">ID:{(Math.random()*10000).toFixed(0)}</span>
+        <span className="text-[8px] font-mono py-0.5 px-1 bg-white/10 text-white leading-none">SYS:OK</span>
+      </div>
+
+      <div className="relative h-full z-10">{children}</div>
     </motion.div>
   );
 };
