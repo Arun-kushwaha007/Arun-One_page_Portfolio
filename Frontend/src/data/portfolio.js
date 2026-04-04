@@ -21,6 +21,20 @@ export const profile = {
   name: "Arun Kushwaha",
   role: "Full-Stack Developer | DevOps Enthusiast | AI/ML Innovator",
   summary: "Final-year B.Tech (NIT Hamirpur). Backend / systems engineer focused on low-latency, real-time services and production-grade cloud deployments. Built and load-tested MERN backends (Socket.IO + Redis), designed scalable document-processing pipelines on GCP, and productionized ML+RAG inference. Strong in system design, observability, CI/CD and performance tuning.",
+  hero: {
+    eyebrow: "Full-Stack Engineer • DevOps • AI Systems",
+    headline: "Arun Kushwaha",
+    summary:
+      "I build fast, production-ready software for real-time systems, cloud platforms, and applied AI.",
+    primaryCta: {
+      label: "View Projects",
+      href: "#projects",
+    },
+    secondaryCta: {
+      label: "Contact Me",
+      href: "#contact",
+    },
+  },
   location: "Hamirpur, Himachal Pradesh, India",
   email: "arunsk1310@gmail.com",
   phone: "+91-9555547363",
