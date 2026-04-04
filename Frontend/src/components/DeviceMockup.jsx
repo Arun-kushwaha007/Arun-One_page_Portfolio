@@ -1,183 +1,145 @@
-import { useRef, useState, useEffect } from 'react';
-import { motion, useSpring, useMotionValue, useScroll, useTransform } from 'framer-motion';
+import { useRef } from 'react';
+import { motion, useMotionValue, useScroll, useSpring, useTransform } from 'framer-motion';
+import { ArrowUpRight, Github } from 'lucide-react';
 import { projects } from '../data/portfolio';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+
+const featuredProject =
+  projects.find((project) => project.id === 'collabnest') ?? projects[0];
 
 const DeviceMockup = () => {
   const containerRef = useRef(null);
-  const [currentProjectIndex, setCurrentProjectIndex] = useState(0);
-  
-  // Scroll-based animations
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ["start end", "end start"]
-  });
-  
-  const scrollScale = useTransform(scrollYProgress, [0, 0.3, 0.7, 1], [0.8, 1, 1, 0.9]);
-  const scrollY = useTransform(scrollYProgress, [0, 0.3, 0.7, 1], [50, 0, 0, -30]);
-  const scrollOpacity = useTransform(scrollYProgress, [0, 0.2, 0.8, 1], [0.5, 1, 1, 0.3]);
-  const scrollRotateZ = useTransform(scrollYProgress, [0, 0.5, 1], [-3, 0, 3]);
-  
-  // Mouse position for 3D tilt
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
 
-  // Spring-based rotation for smooth follow
-  const rotateX = useSpring(mouseY, { stiffness: 150, damping: 20 });
-  const rotateY = useSpring(mouseX, { stiffness: 150, damping: 20 });
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ['start end', 'end start'],
+  });
 
-  // Handle mouse move
-  const handleMouseMove = (e) => {
+  const scale = useTransform(scrollYProgress, [0, 0.45, 1], [0.94, 1, 0.96]);
+  const y = useTransform(scrollYProgress, [0, 1], [28, -20]);
+  const opacity = useTransform(scrollYProgress, [0, 0.25, 1], [0.45, 1, 0.8]);
+
+  const rotateX = useSpring(mouseY, { stiffness: 140, damping: 18, mass: 0.8 });
+  const rotateY = useSpring(mouseX, { stiffness: 140, damping: 18, mass: 0.8 });
+
+  const handleMouseMove = (event) => {
     if (!containerRef.current) return;
+
     const rect = containerRef.current.getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
-    
-    // Calculate rotation based on mouse distance from center (-15 to 15 degrees)
-    const x = ((e.clientX - centerX) / (rect.width / 2)) * 15;
-    const y = ((e.clientY - centerY) / (rect.height / 2)) * -10;
-    
-    mouseX.set(x);
-    mouseY.set(y);
+
+    mouseX.set(((event.clientX - centerX) / rect.width) * 10);
+    mouseY.set(((centerY - event.clientY) / rect.height) * 10);
   };
 
-  // Reset rotation on mouse leave
-  const handleMouseLeave = () => {
+  const resetTilt = () => {
     mouseX.set(0);
     mouseY.set(0);
   };
 
-  // Auto-cycle projects every 4 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentProjectIndex((prev) => (prev + 1) % projects.length);
-    }, 4000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const nextProject = () => {
-    setCurrentProjectIndex((prev) => (prev + 1) % projects.length);
-  };
-
-  const prevProject = () => {
-    setCurrentProjectIndex((prev) => (prev - 1 + projects.length) % projects.length);
-  };
-
-  const currentProject = projects[currentProjectIndex];
-
   return (
     <motion.div
       ref={containerRef}
-      style={{ 
-        scale: scrollScale, 
-        y: scrollY, 
-        opacity: scrollOpacity,
-        rotateZ: scrollRotateZ,
-      }}
+      style={{ scale, y, opacity }}
       onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      className="relative w-full h-full flex items-center justify-center cursor-grab active:cursor-grabbing"
+      onMouseLeave={resetTilt}
+      className="relative w-full max-w-[560px]"
     >
-      {/* Floating glow effect */}
-      <div className="absolute inset-0 bg-gradient-to-r from-neon-blue/20 via-transparent to-neon-purple/20 blur-3xl opacity-50 animate-pulse pointer-events-none" />
+      <div className="pointer-events-none absolute inset-0 rounded-[2rem] bg-gradient-to-br from-cyan-400/18 via-transparent to-blue-500/14 blur-3xl" />
 
-      {/* The 3D Laptop */}
       <motion.div
         style={{
           rotateX,
           rotateY,
-          transformStyle: "preserve-3d",
-          perspective: 1200,
+          transformPerspective: 1600,
+          transformStyle: 'preserve-3d',
         }}
-        className="relative"
+        className="relative overflow-hidden rounded-[2rem] border border-white/12 bg-slate-950/70 p-4 shadow-[0_30px_90px_rgba(6,12,24,0.6)] backdrop-blur-2xl sm:p-5"
       >
-        {/* Laptop Body */}
-        <div className="relative" style={{ transformStyle: "preserve-3d" }}>
-          {/* Screen Bezel */}
-          <div 
-            className="relative w-[280px] md:w-[450px] lg:w-[550px] aspect-[16/10] rounded-t-xl bg-gradient-to-b from-gray-800 to-gray-900 p-2 md:p-3 shadow-2xl border border-white/10"
-            style={{ transformStyle: "preserve-3d", transform: "translateZ(20px)" }}
-          >
-            {/* Inner Screen */}
-            <div className="relative w-full h-full rounded-lg overflow-hidden bg-black shadow-inner">
-              {/* Project Image */}
-              <motion.img 
-                key={currentProjectIndex}
-                initial={{ opacity: 0, scale: 1.1 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5 }}
-                src={currentProject?.image || "/api/placeholder/600/375"} 
-                alt={currentProject?.title}
-                className="w-full h-full object-cover"
-              />
-              
-              {/* Screen Glare Effect */}
-              <div className="absolute inset-0 bg-gradient-to-br from-white/15 via-transparent to-transparent pointer-events-none" />
+        <div className="absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-cyan-200/60 to-transparent" />
 
-              {/* Project Info Overlay */}
-              <motion.div 
-                key={`info-${currentProjectIndex}`}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent"
-              >
-                <p className="text-xs md:text-sm font-bold text-white truncate">{currentProject?.title}</p>
-                <p className="text-[10px] md:text-xs text-gray-400 truncate">{currentProject?.tech?.slice(0, 3).join(' • ')}</p>
-              </motion.div>
-            </div>
-
-            {/* Webcam dot */}
-            <div className="absolute top-1 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-gray-700 border border-gray-600">
-              <div className="absolute inset-0.5 rounded-full bg-gray-800" />
-            </div>
+        <div className="mb-4 flex items-center justify-between rounded-2xl border border-white/8 bg-white/5 px-4 py-3">
+          <div>
+            <p className="text-[11px] uppercase tracking-[0.24em] text-slate-400">
+              Featured build
+            </p>
+            <h3 className="mt-1 text-lg font-semibold text-white">
+              {featuredProject.title}
+            </h3>
           </div>
-
-          {/* Laptop Base/Keyboard */}
-          <div 
-            className="relative w-[300px] md:w-[490px] lg:w-[600px] h-3 md:h-4 -mt-px mx-auto bg-gradient-to-b from-gray-700 to-gray-800 rounded-b-lg shadow-lg border-x border-b border-white/5"
-            style={{ 
-              transform: "rotateX(-75deg) translateZ(10px)",
-              transformOrigin: "top center",
-            }}
+          <a
+            href={featuredProject.links.github}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-slate-900/80 text-slate-200 transition-colors duration-300 hover:border-cyan-300/40 hover:text-cyan-200"
+            aria-label={`View code for ${featuredProject.title}`}
           >
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-16 md:w-24 h-1 bg-gray-600 rounded-b" />
-          </div>
+            <Github className="h-4 w-4" />
+          </a>
         </div>
 
-        {/* Reflection/Shadow */}
-        <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 w-[70%] h-4 bg-neon-blue/30 blur-xl rounded-full" />
-      </motion.div>
-
-      {/* Navigation Controls */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-4 z-20">
-        <button
-          onClick={prevProject}
-          className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors border border-white/10"
-        >
-          <ChevronLeft className="w-4 h-4 text-white" />
-        </button>
-        
-        {/* Dots indicator */}
-        <div className="flex gap-2">
-          {projects.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => setCurrentProjectIndex(i)}
-              className={`w-2 h-2 rounded-full transition-all ${
-                i === currentProjectIndex ? 'bg-neon-blue w-4' : 'bg-white/30 hover:bg-white/50'
-              }`}
+        <div className="overflow-hidden rounded-[1.5rem] border border-white/10 bg-slate-900/80">
+          <div className="relative aspect-[16/10] overflow-hidden">
+            <img
+              src={featuredProject.image}
+              alt={featuredProject.title}
+              className="h-full w-full object-cover"
             />
-          ))}
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/18 to-transparent" />
+            <div className="absolute inset-x-0 bottom-0 p-5">
+              <p className="max-w-md text-sm leading-6 text-slate-200">
+                {featuredProject.description}
+              </p>
+            </div>
+          </div>
         </div>
 
-        <button
-          onClick={nextProject}
-          className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors border border-white/10"
-        >
-          <ChevronRight className="w-4 h-4 text-white" />
-        </button>
-      </div>
+        <div className="mt-4 grid gap-3 sm:grid-cols-[1.25fr_0.75fr]">
+          <div className="rounded-[1.5rem] border border-white/8 bg-white/5 p-4">
+            <p className="text-[11px] uppercase tracking-[0.22em] text-slate-400">
+              Why it stands out
+            </p>
+            <ul className="mt-3 space-y-3 text-sm leading-6 text-slate-200">
+              {featuredProject.points.slice(0, 2).map((point) => (
+                <li key={point} className="flex gap-3">
+                  <span className="mt-2 h-1.5 w-1.5 rounded-full bg-cyan-300" />
+                  <span>{point}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="rounded-[1.5rem] border border-white/8 bg-white/5 p-4">
+            <p className="text-[11px] uppercase tracking-[0.22em] text-slate-400">
+              Stack snapshot
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {featuredProject.tech.slice(0, 4).map((item) => (
+                <span
+                  key={item}
+                  className="rounded-full border border-white/10 bg-slate-950/70 px-3 py-1.5 text-xs text-slate-200"
+                >
+                  {item}
+                </span>
+              ))}
+            </div>
+
+            {featuredProject.links.demo && (
+              <a
+                href={featuredProject.links.demo}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-cyan-200 transition-colors duration-300 hover:text-cyan-100"
+              >
+                Live preview
+                <ArrowUpRight className="h-4 w-4" />
+              </a>
+            )}
+          </div>
+        </div>
+      </motion.div>
     </motion.div>
   );
 };
