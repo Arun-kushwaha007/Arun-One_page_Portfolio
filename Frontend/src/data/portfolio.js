@@ -35,6 +35,20 @@ export const profile = {
       href: "#contact",
     },
   },
+  about: {
+    title: "About",
+    intro:
+      "Backend and systems-focused engineer building real-time platforms, cloud-native services, and applied AI products.",
+    body:
+      "I care about software that is measurable, resilient, and ready for production. My recent work spans collaboration platforms, document-processing pipelines, and ML-assisted workflows.",
+    focusAreas: [
+      "Real-time systems and backend performance",
+      "Cloud-native deployments and DevOps workflows",
+      "Applied AI products with practical delivery focus",
+    ],
+    availability:
+      "Open to software engineering internships, full-time roles, and serious collaborations.",
+  },
   location: "Hamirpur, Himachal Pradesh, India",
   email: "arunsk1310@gmail.com",
   phone: "+91-9555547363",
