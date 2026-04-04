@@ -1,135 +1,202 @@
-import { useRef } from 'react';
+import { motion } from 'framer-motion';
+import { ArrowUpRight, Github } from 'lucide-react';
 import { projects } from '../data/portfolio';
-import { motion as Motion, useScroll, useTransform, useSpring, useVelocity } from 'framer-motion';
-import { Github, ExternalLink, ArrowUpRight } from 'lucide-react';
 import { useCursor } from '../context/CursorContext.jsx';
 
-const ProjectCard = ({ project, index, targetScale }) => {
-  const container = useRef(null);
-  const { scrollYProgress } = useScroll({
-    target: container,
-    offset: ['start end', 'start start']
-  });
-  const { setCursorType } = useCursor();
+const featuredProject =
+  projects.find((project) => project.id === 'collabnest') ?? projects[0];
+const remainingProjects = projects.filter(
+  (project) => project.id !== featuredProject.id
+);
 
-  const imageScale = useTransform(scrollYProgress, [0, 1], [1.5, 1]);
-  const scale = useTransform(scrollYProgress, [0, 1], [1, targetScale]);
-  
-  // Crazy rotation based on scroll velocity
-  const scrollVelocity = useVelocity(scrollYProgress);
-  const skew = useSpring(useTransform(scrollVelocity, [-1, 1], [-10, 10]), {
-    mass: 0.1, stiffness: 200, damping: 10
-  });
+const ActionLink = ({ href, children, variant = 'ghost' }) => {
+  if (!href) {
+    return null;
+  }
+
+  const baseClassName =
+    'inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-cyan-300 focus:ring-offset-2 focus:ring-offset-slate-950';
+
+  const variantClassName =
+    variant === 'primary'
+      ? 'bg-cyan-400 text-slate-950 hover:-translate-y-0.5 hover:bg-cyan-300'
+      : 'border border-white/12 bg-white/5 text-slate-200 hover:-translate-y-0.5 hover:border-cyan-300/40 hover:text-cyan-100';
 
   return (
-    <div ref={container} className="h-screen flex items-center justify-center sticky top-0 px-4 md:px-0">
-      <Motion.div 
-        style={{ scale, skewX: skew, rotateX: skew, top: `calc(${index * 25}px)` }} 
-        className="relative flex flex-col md:flex-row h-[70vh] w-full max-w-7xl rounded-3xl bg-black border-2 border-white/20 overflow-hidden origin-top neo-shadow-purple"
-      >
-        {/* Liquid Glass Layer */}
-        <div className="absolute inset-0 overflow-hidden opacity-10 pointer-events-none z-0">
-          <div 
-            className="absolute -top-[10%] -left-[10%] w-[50%] h-[50%] bg-neon-purple/40 blur-[100px] animate-[fluid-blob_15s_infinite_linear]"
-            style={{ borderRadius: '60% 40% 30% 70% / 60% 30% 70% 40%' }}
-          />
-        </div>
-        
-        {/* Project Image Area (60%) */}
-        <div 
-            className="md:w-[60%] h-1/2 md:h-full relative overflow-hidden group cursor-none"
-            onMouseEnter={() => setCursorType('project')}
-            onMouseLeave={() => setCursorType('default')}
-        >
-          <Motion.div style={{ scale: imageScale }} className="w-full h-full">
-            <img 
-              src={project.image}
-              alt={project.title}
-              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 grayscale group-hover:grayscale-0"
-            />
-          </Motion.div>
-          
-          <div className="absolute inset-0 bg-gradient-to-r from-black/80 to-transparent md:bg-transparent" />
-          
-           {/* Floating Tech Tags */}
-           <div className="absolute bottom-6 left-6 flex flex-wrap gap-2">
-              {project.tech.map((t) => (
-                 <span key={t} className="px-3 py-1 bg-black/60 backdrop-blur-md border border-white/10 rounded-full text-xs font-mono text-neon-blue">
-                    #{t}
-                 </span>
-              ))}
-           </div>
-        </div>
-
-        {/* Project Details Area (40%) */}
-        <div className="md:w-[40%] h-1/2 md:h-full p-8 md:p-12 flex flex-col justify-between bg-[#080808] relative">
-           
-           {/* Cyberpunk grid bg */}
-           <div className="absolute inset-0 opacity-[0.03] bg-[linear-gradient(45deg,#fff_1px,transparent_1px)] bg-[size:20px_20px]" />
-
-           <div>
-              <div className="flex items-center gap-4 mb-6">
-                 <span className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-neon-blue to-neon-purple opacity-50">
-                    0{index + 1}
-                 </span>
-                 <div className="h-px w-20 bg-white/20" />
-              </div>
-
-              <h3 className="text-4xl md:text-5xl font-bold text-white mb-6 leading-tight">
-                {project.title}
-              </h3>
-              
-              <p className="text-gray-400 text-lg leading-relaxed mb-8">
-                {project.description}
-              </p>
-           </div>
-
-           <div className="flex items-center gap-6">
-              {project.links.github && (
-                 <a href={project.links.github} target="_blank" rel="noreferrer" className="flex items-center gap-2 px-6 py-3 rounded-full border border-white/20 hover:bg-white/10 transition-colors group">
-                    <Github className="w-5 h-5 group-hover:text-white transition-colors" />
-                    <span className="font-mono text-sm">REPO</span>
-                 </a>
-              )}
-              {project.links.demo && (
-                 <a href={project.links.demo} target="_blank" rel="noreferrer" className="flex items-center gap-2 px-6 py-3 rounded-full bg-white text-black hover:bg-neon-blue transition-colors group">
-                    <span className="font-bold text-sm">VISIT SITE</span>
-                    <ArrowUpRight className="w-5 h-5 group-hover:rotate-45 transition-transform" />
-                 </a>
-              )}
-           </div>
-        </div>
-
-      </Motion.div>
-    </div>
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      className={`${baseClassName} ${variantClassName}`}
+    >
+      {children}
+    </a>
   );
 };
 
+const ProjectChipList = ({ tech }) => (
+  <div className="flex flex-wrap gap-2">
+    {tech.slice(0, 3).map((item) => (
+      <span
+        key={item}
+        className="rounded-full border border-white/10 bg-slate-950/65 px-3 py-1.5 text-xs text-slate-200"
+      >
+        {item}
+      </span>
+    ))}
+  </div>
+);
+
 const Projects = () => {
-  const container = useRef(null);
+  const { setCursorType } = useCursor();
 
   return (
-    <div ref={container} id="projects" className="relative bg-black border-t border-white/10">
-      
-       {/* Section Header */}
-       <div className="sticky top-0 h-[20vh] flex items-center justify-center z-10 pointer-events-none mix-blend-difference">
-          <h2 className="text-9xl font-bold text-white/10 tracking-tighter">WORKS</h2>
-       </div>
+    <section id="projects" className="border-t border-white/10 bg-black py-24">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <motion.div
+          initial={{ opacity: 0, y: 18 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.2 }}
+          transition={{ duration: 0.5 }}
+          className="mb-12"
+        >
+          <p className="text-sm uppercase tracking-[0.28em] text-cyan-200/85">
+            Selected Work
+          </p>
+          <div className="mt-4 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-3xl">
+              <h2 className="text-4xl font-semibold leading-tight text-white sm:text-5xl">
+                Projects that show how I build, ship, and improve software.
+              </h2>
+            </div>
+            <p className="max-w-xl text-sm leading-7 text-slate-400 sm:text-base">
+              A mix of real-time systems, applied AI products, and backend-heavy builds
+              where performance, delivery, and usability all matter.
+            </p>
+          </div>
+        </motion.div>
 
-      <div className="pb-[20vh]">
-        {projects.map((project, i) => {
-          const targetScale = 1 - ((projects.length - i) * 0.05);
-          return (
-            <ProjectCard 
-              key={project.id} 
-              project={project} 
-              index={i} 
-              targetScale={targetScale} 
-            />
-          );
-        })}
+        <motion.article
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.15 }}
+          transition={{ duration: 0.55 }}
+          className="overflow-hidden rounded-[2rem] border border-white/10 bg-slate-950/70 shadow-[0_24px_80px_rgba(4,10,20,0.34)] backdrop-blur-xl"
+        >
+          <div className="grid lg:grid-cols-[minmax(0,1.1fr)_minmax(340px,0.9fr)]">
+            <div
+              className="relative overflow-hidden"
+              onMouseEnter={() => setCursorType('project')}
+              onMouseLeave={() => setCursorType('default')}
+            >
+              <img
+                src={featuredProject.image}
+                alt={featuredProject.title}
+                className="h-full min-h-[320px] w-full object-cover transition-transform duration-700 hover:scale-[1.03]"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/10 to-transparent" />
+            </div>
+
+            <div className="flex flex-col justify-between p-6 sm:p-8">
+              <div>
+                <p className="text-sm uppercase tracking-[0.24em] text-cyan-200/85">
+                  Featured Project
+                </p>
+                <h3 className="mt-4 text-3xl font-semibold leading-tight text-white sm:text-4xl">
+                  {featuredProject.title}
+                </h3>
+                <p className="mt-4 text-base leading-8 text-slate-300">
+                  {featuredProject.description}
+                </p>
+
+                <div className="mt-6">
+                  <ProjectChipList tech={featuredProject.tech} />
+                </div>
+
+                <ul className="mt-6 space-y-3 text-sm leading-7 text-slate-300">
+                  {featuredProject.points.slice(0, 2).map((point) => (
+                    <li key={point} className="flex gap-3">
+                      <span className="mt-2 h-1.5 w-1.5 rounded-full bg-cyan-300" />
+                      <span>{point}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="mt-8 flex flex-wrap gap-3">
+                <ActionLink href={featuredProject.links.github} variant="ghost">
+                  <Github className="h-4 w-4" />
+                  Code
+                </ActionLink>
+                <ActionLink href={featuredProject.links.demo} variant="primary">
+                  Live
+                  <ArrowUpRight className="h-4 w-4" />
+                </ActionLink>
+              </div>
+            </div>
+          </div>
+        </motion.article>
+
+        <div className="mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+          {remainingProjects.map((project, index) => (
+            <motion.article
+              key={project.id}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.15 }}
+              transition={{ duration: 0.45, delay: index * 0.04 }}
+              className="group overflow-hidden rounded-[1.75rem] border border-white/10 bg-slate-950/65 shadow-[0_18px_50px_rgba(4,10,20,0.28)] backdrop-blur-xl"
+            >
+              <div
+                className="relative overflow-hidden"
+                onMouseEnter={() => setCursorType('project')}
+                onMouseLeave={() => setCursorType('default')}
+              >
+                <img
+                  src={project.image}
+                  alt={project.title}
+                  className="h-56 w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/12 to-transparent" />
+              </div>
+
+              <div className="p-6">
+                <h3 className="text-2xl font-semibold leading-tight text-white">
+                  {project.title}
+                </h3>
+                <p className="mt-3 text-sm leading-7 text-slate-400">
+                  {project.description}
+                </p>
+
+                <div className="mt-5">
+                  <ProjectChipList tech={project.tech} />
+                </div>
+
+                <ul className="mt-5 space-y-2 text-sm leading-6 text-slate-300">
+                  {project.points.slice(0, 2).map((point) => (
+                    <li key={point} className="flex gap-3">
+                      <span className="mt-2 h-1.5 w-1.5 rounded-full bg-cyan-300" />
+                      <span>{point}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <div className="mt-6 flex flex-wrap gap-3">
+                  <ActionLink href={project.links.github} variant="ghost">
+                    <Github className="h-4 w-4" />
+                    Code
+                  </ActionLink>
+                  <ActionLink href={project.links.demo} variant="primary">
+                    Live
+                    <ArrowUpRight className="h-4 w-4" />
+                  </ActionLink>
+                </div>
+              </div>
+            </motion.article>
+          ))}
+        </div>
       </div>
-    </div>
+    </section>
   );
 };
 
