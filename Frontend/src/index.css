@@ -30,8 +30,8 @@
 
 .liquid-glass {
   background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(12px) saturate(180%);
   -webkit-backdrop-filter: blur(12px) saturate(180%);
+  backdrop-filter: blur(12px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -242,3 +242,43 @@ h6 {
   }
 }
 
+/* Hero & Layout Utilities */
+.hero-grid {
+  background-image: radial-gradient(circle at center, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+.text-mask {
+  -webkit-text-stroke: 1px rgba(255, 255, 255, 0.05);
+  color: transparent;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.1), transparent);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.status-glow {
+  position: relative;
+}
+
+.status-glow::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  background: inherit;
+  filter: blur(8px);
+  opacity: 0.5;
+  z-index: -1;
+  border-radius: inherit;
+  animation: pulse-glow 2s infinite ease-in-out;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.2); }
+}
+
+@layer utilities {
+  .clip-path-tech {
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%);
+  }
+}
