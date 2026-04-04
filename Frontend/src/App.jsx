@@ -19,6 +19,8 @@ import useKonamiCode from './hooks/useKonamiCode';
 import GlitchChaos from './components/ui/GlitchChaos';
 import TerminalCLI from './components/ui/TerminalCLI';
 
+import SmoothScroll from './components/ui/SmoothScroll';
+
 function App() {
   const konamiTriggered = useKonamiCode();
   const [showChaos, setShowChaos] = useState(false);
@@ -33,32 +35,34 @@ function App() {
   return (
     <CursorProvider>
       <MatrixProvider>
-        <div className="min-h-screen text-white selection:bg-blue-500/30 relative z-0">
-        <AnimatePresence mode="wait">
-          {isLoading && (
-            <LoadingScreen onComplete={() => setIsLoading(false)} />
-          )}
-        </AnimatePresence>
+        <SmoothScroll>
+          <div className="min-h-screen text-white selection:bg-blue-500/30 relative z-0">
+          <AnimatePresence mode="wait">
+            {isLoading && (
+              <LoadingScreen onComplete={() => setIsLoading(false)} />
+            )}
+          </AnimatePresence>
 
-        <CustomCursor />
-        <CyberpunkOverlay />
-        <MatrixRain />
-        <GlitchChaos triggered={showChaos} onComplete={() => setShowChaos(false)} />
-        <TerminalCLI />
-        <Background3D />
-        <Navbar />
-        
-        <main>
-          <Hero />
-          <About />
-          <Experience />
-          <Projects />
-          <Skills />
-          <Contact />
-        </main>
+          <CustomCursor />
+          <CyberpunkOverlay />
+          <MatrixRain />
+          <GlitchChaos triggered={showChaos} onComplete={() => setShowChaos(false)} />
+          <TerminalCLI />
+          <Background3D />
+          <Navbar />
+          
+          <main>
+            <Hero />
+            <About />
+            <Experience />
+            <Projects />
+            <Skills />
+            <Contact />
+          </main>
 
-        <Footer />
-      </div>
+          <Footer />
+        </div>
+        </SmoothScroll>
       </MatrixProvider>
     </CursorProvider>
   );
