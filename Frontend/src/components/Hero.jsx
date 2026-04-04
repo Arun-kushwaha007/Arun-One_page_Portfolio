@@ -30,9 +30,8 @@ const Hero = () => {
       className="relative flex min-h-screen items-center justify-center overflow-hidden px-6 pt-24 pb-12"
     >
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute left-[-10%] top-[14%] h-56 w-56 rounded-full bg-cyan-500/10 blur-3xl" />
-        <div className="absolute right-[-8%] top-[8%] h-72 w-72 rounded-full bg-blue-500/12 blur-3xl" />
-        <div className="absolute bottom-[10%] left-[28%] h-40 w-40 rounded-full bg-emerald-400/8 blur-3xl" />
+        <div className="absolute left-[-10%] top-[18%] h-44 w-44 rounded-full bg-cyan-500/8 blur-3xl" />
+        <div className="absolute right-[-8%] top-[10%] h-56 w-56 rounded-full bg-blue-500/10 blur-3xl" />
       </div>
 
       <div className="z-10 mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-10 lg:grid-cols-[minmax(0,1.05fr)_minmax(320px,0.95fr)] lg:gap-16">
@@ -53,27 +52,15 @@ const Hero = () => {
               {profile.hero.eyebrow}
             </p>
 
-            <h1 className="max-w-4xl text-4xl font-semibold leading-[1.02] text-white sm:text-5xl md:text-6xl lg:text-7xl">
-              <span className="block text-white/92">{profile.name}</span>
-              <span className="mt-3 block bg-gradient-to-r from-white via-cyan-100 to-slate-400 bg-clip-text text-transparent">
-                {profile.hero.headline.replace(`${profile.name} `, '')}
+            <h1 className="max-w-4xl text-5xl font-semibold leading-[0.98] text-white sm:text-6xl md:text-7xl lg:text-8xl">
+              <span className="block bg-gradient-to-r from-white via-cyan-100 to-slate-400 bg-clip-text text-transparent">
+                {profile.hero.headline}
               </span>
             </h1>
 
-            <p className="mt-6 max-w-2xl text-base leading-8 text-slate-300 sm:text-lg">
+            <p className="mt-6 max-w-xl text-base leading-8 text-slate-300 sm:text-lg">
               {profile.hero.summary}
             </p>
-
-            <div className="mt-8 flex flex-wrap gap-3">
-              {profile.hero.stats.map((stat) => (
-                <span
-                  key={stat}
-                  className="rounded-full border border-white/10 bg-slate-950/60 px-4 py-2 text-sm text-slate-200 backdrop-blur-md"
-                >
-                  {stat}
-                </span>
-              ))}
-            </div>
 
             <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:items-center">
               <a
@@ -92,11 +79,7 @@ const Hero = () => {
               </a>
             </div>
 
-            <div className="mt-10 flex items-center gap-4">
-              <span className="text-xs font-medium uppercase tracking-[0.22em] text-slate-400">
-                Connect
-              </span>
-              <div className="h-px w-14 bg-white/10" />
+            <div className="mt-10 flex items-center gap-3">
               <div className="flex gap-3">
                 {socials.map((social) => (
                   <a

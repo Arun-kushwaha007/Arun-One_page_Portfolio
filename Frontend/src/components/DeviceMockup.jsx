@@ -56,7 +56,7 @@ const DeviceMockup = () => {
           transformPerspective: 1600,
           transformStyle: 'preserve-3d',
         }}
-        className="relative overflow-hidden rounded-[2rem] border border-white/12 bg-slate-950/70 p-4 shadow-[0_30px_90px_rgba(6,12,24,0.6)] backdrop-blur-2xl sm:p-5"
+        className="relative overflow-hidden rounded-[2rem] border border-white/12 bg-slate-950/70 p-4 shadow-[0_24px_70px_rgba(6,12,24,0.48)] backdrop-blur-2xl sm:p-5"
       >
         <div className="absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-cyan-200/60 to-transparent" />
 
@@ -96,27 +96,13 @@ const DeviceMockup = () => {
           </div>
         </div>
 
-        <div className="mt-4 grid gap-3 sm:grid-cols-[1.25fr_0.75fr]">
-          <div className="rounded-[1.5rem] border border-white/8 bg-white/5 p-4">
+        <div className="mt-4 flex items-center justify-between gap-4 rounded-[1.5rem] border border-white/8 bg-white/5 p-4">
+          <div>
             <p className="text-[11px] uppercase tracking-[0.22em] text-slate-400">
-              Why it stands out
+              Stack
             </p>
-            <ul className="mt-3 space-y-3 text-sm leading-6 text-slate-200">
-              {featuredProject.points.slice(0, 2).map((point) => (
-                <li key={point} className="flex gap-3">
-                  <span className="mt-2 h-1.5 w-1.5 rounded-full bg-cyan-300" />
-                  <span>{point}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className="rounded-[1.5rem] border border-white/8 bg-white/5 p-4">
-            <p className="text-[11px] uppercase tracking-[0.22em] text-slate-400">
-              Stack snapshot
-            </p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {featuredProject.tech.slice(0, 4).map((item) => (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {featuredProject.tech.slice(0, 3).map((item) => (
                 <span
                   key={item}
                   className="rounded-full border border-white/10 bg-slate-950/70 px-3 py-1.5 text-xs text-slate-200"
@@ -125,19 +111,19 @@ const DeviceMockup = () => {
                 </span>
               ))}
             </div>
-
-            {featuredProject.links.demo && (
-              <a
-                href={featuredProject.links.demo}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-cyan-200 transition-colors duration-300 hover:text-cyan-100"
-              >
-                Live preview
-                <ArrowUpRight className="h-4 w-4" />
-              </a>
-            )}
           </div>
+
+          {featuredProject.links.demo && (
+            <a
+              href={featuredProject.links.demo}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-sm font-medium text-cyan-200 transition-colors duration-300 hover:text-cyan-100"
+            >
+              Live preview
+              <ArrowUpRight className="h-4 w-4" />
+            </a>
+          )}
         </div>
       </motion.div>
     </motion.div>
