@@ -1,1 +1,7 @@
 Frontend/node_modules
+.agents
+.agent
+skills-lock.json
+.worktrees
+docs
+
