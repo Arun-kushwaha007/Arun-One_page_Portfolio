@@ -32,6 +32,7 @@ const Navbar = () => {
                 setHoveredIndex(index);
                 playSound('hover');
               }}
+              onMouseLeave={() => setHoveredIndex(null)}
               onClick={() => playSound('click')}
               className="relative group"
             >
