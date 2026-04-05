@@ -7,10 +7,10 @@ const CyberpunkOverlay = () => {
       <div className="absolute inset-0 bg-[linear-gradient(rgba(0,243,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,243,255,0.03)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_at_center,black_40%,transparent_80%)]" />
 
       {/* Corner Accents */}
-      <div className="absolute top-2 left-2 md:top-3 md:left-3 w-16 h-16 md:w-32 md:h-32 border-l-2 border-t-2 border-neon-blue/30 rounded-tl-3xl" />
-      <div className="absolute top-2 right-2 md:top-3 md:right-3 w-16 h-16 md:w-32 md:h-32 border-r-2 border-t-2 border-neon-purple/30 rounded-tr-3xl" />
-      <div className="absolute bottom-20 left-2 md:bottom-3 md:left-3 w-16 h-16 md:w-32 md:h-32 border-l-2 border-bottom-2 border-neon-green/30 rounded-bl-3xl border-b-2" />
-      <div className="absolute bottom-20 right-2 md:bottom-3 md:right-3 w-16 h-16 md:w-32 md:h-32 border-r-2 border-bottom-2 border-neon-blue/30 rounded-br-3xl border-b-2" />
+      <div className="absolute top-2 left-2 md:top-3 md:left-3 w-16 h-16 md:w-32 md:h-32 border-l-2 border-t-2 border-neon-blue/30 rounded-tl-lg md:rounded-tl-3xl" />
+      <div className="absolute top-2 right-2 md:top-3 md:right-3 w-16 h-16 md:w-32 md:h-32 border-r-2 border-t-2 border-neon-purple/30 rounded-tr-lg md:rounded-tr-3xl" />
+      <div className="absolute bottom-2 left-2 md:bottom-3 md:left-3 w-16 h-16 md:w-32 md:h-32 border-l-2 border-bottom-2 border-neon-green/30 rounded-bl-lg md:rounded-bl-3xl border-b-2" />
+      <div className="absolute bottom-2 right-2 md:bottom-3 md:right-3 w-16 h-16 md:w-32 md:h-32 border-r-2 border-bottom-2 border-neon-blue/30 rounded-br-lg md:rounded-br-3xl border-b-2" />
 
       {/* System Status Text */}
       <div className="absolute top-4 left-4 md:top-8 md:left-8 font-mono text-[10px] md:text-xs text-neon-blue/50 tracking-widest opacity-50">
@@ -19,7 +19,7 @@ const CyberpunkOverlay = () => {
         SECURE_CONNECTION: ESTABLISHED
       </div>
 
-      <div className="absolute bottom-24 right-6 md:bottom-10 md:right-10 text-[10px] font-mono text-neon-blue/40 tracking-widest block">
+      <div className="hidden md:absolute bottom-24 right-6 md:bottom-10 md:right-10 text-[10px] font-mono text-neon-blue/40 tracking-widest md:block">
         RENDER_ENGINE: ACTIVE
         <br />
         <span className="text-red-500/40 animate-pulse hidden md:inline-block">

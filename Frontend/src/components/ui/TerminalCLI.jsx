@@ -304,9 +304,9 @@ const TerminalCLI = () => {
             animate={{ scale: 1, rotate: 0 }}
             exit={{ scale: 0, rotate: 20 }}
             onClick={() => setIsOpen(true)}
-            className="fixed bottom-6 left-6 z-50 flex h-14 w-14 items-center justify-center rounded-2xl border-2 border-neon-green/40 bg-black/80 text-neon-green shadow-[0_0_20px_rgba(10,255,10,0.2)] transition-all hover:border-white hover:text-white group"
+            className="fixed bottom-20 left-4 md:bottom-6 md:left-6 z-[110] flex h-12 w-12 md:h-14 md:w-14 items-center justify-center rounded-2xl border-2 border-neon-green/40 bg-black/80 text-neon-green shadow-[0_0_20px_rgba(10,255,10,0.2)] transition-all hover:border-white hover:text-white group"
           >
-            <Terminal className="h-6 w-6 transition-transform group-hover:scale-110" />
+            <Terminal className="h-5 w-5 md:h-6 md:w-6 transition-transform group-hover:scale-110" />
             <div className="absolute inset-0 rounded-2xl bg-neon-green/5 animate-pulse" />
           </motion.button>
         )}
@@ -318,8 +318,8 @@ const TerminalCLI = () => {
             initial={{ y: 20, opacity: 0, scale: 0.95 }}
             animate={{ y: 0, opacity: 1, scale: 1 }}
             exit={{ y: 20, opacity: 0, scale: 0.95 }}
-            className={`fixed bottom-0 left-0 z-50 flex flex-col overflow-hidden border-t-2 border-r-2 border-neon-green/50 bg-black/95 font-mono text-sm backdrop-blur-xl shadow-[0_0_50px_rgba(0,0,0,0.8)] crt-flicker ${
-              isExpanded ? 'h-[90vh] w-full md:w-[850px]' : 'h-[400px] w-full md:w-[700px]'
+            className={`fixed bottom-0 left-0 z-[110] flex flex-col overflow-hidden border-t-2 border-r-2 border-neon-green/50 bg-black/95 font-mono text-sm backdrop-blur-xl shadow-[0_0_50px_rgba(0,0,0,0.8)] crt-flicker ${
+              isExpanded ? 'h-[90vh] w-full md:w-[850px]' : 'h-[60vh] md:h-[400px] w-full md:w-[700px]'
             } rounded-tr-2xl`}
           >
             {/* CRT Scanline Overlay */}
