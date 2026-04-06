@@ -1,43 +1,86 @@
 import { useRef, useState, useEffect } from 'react';
-import { motion as Motion, useScroll, useTransform, useSpring } from 'framer-motion';
-import { ArrowRight, ChevronDown, Github, Linkedin, Mail, Sparkles, Terminal, Shield } from 'lucide-react';
-import DeviceMockup from './DeviceMockup';
+import { motion as Motion, useScroll, useTransform, useSpring, useInView } from 'framer-motion';
+import { ArrowRight, Github, Linkedin, Mail, Sparkles, Terminal, Shield } from 'lucide-react';
 import { profile } from '../data/portfolio';
 import { useCursor } from '../context/CursorContext.jsx';
 
 const AvatarSequence = () => {
     const [frame, setFrame] = useState(1);
+    const [isLoaded, setIsLoaded] = useState(false);
+    const canvasRef = useRef(null);
+    const imagesRef = useRef([]);
+    const containerRef = useRef(null);
+    const isInView = useInView(containerRef);
 
     useEffect(() => {
-        // Preload exactly 30 frames
-        for (let i = 1; i <= 30; i++) {
-            const img = new Image();
-            img.src = `/assets/avatar/${String(i).padStart(2, '0')} - Edited.png`;
-        }
-        
-        // 5 FPS (200ms per frame) to complete 30 frames in 6 seconds
-        const interval = setInterval(() => {
-            setFrame(prev => (prev >= 30 ? 1 : prev + 1));
-        }, 200);
-
-        return () => clearInterval(interval);
+        // Priority loading logic
+        const firstImg = new Image();
+        firstImg.src = `/assets/avatar/01 - Edited.png`;
+        firstImg.onload = () => {
+            imagesRef.current[0] = firstImg;
+            drawFrame(0);
+            
+            // Background load the rest to avoid blocking
+            for (let i = 2; i <= 30; i++) {
+                const img = new Image();
+                img.src = `/assets/avatar/${String(i).padStart(2, '0')} - Edited.png`;
+                img.onload = () => {
+                    imagesRef.current[i - 1] = img;
+                    if (i === 30) setIsLoaded(true);
+                };
+            }
+        };
     }, []);
 
-    const currentImage = `/assets/avatar/${String(frame).padStart(2, '0')} - Edited.png`;
+    const drawFrame = (index) => {
+        const canvas = canvasRef.current;
+        const img = imagesRef.current[Math.floor(index)];
+        if (!canvas || !img) return;
+        
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        // Slightly scale down for performance while maintaining clear visuals
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    };
+
+    useEffect(() => {
+        if (!isInView || !isLoaded) return; 
+        
+        const interval = setInterval(() => {
+            setFrame(prev => (prev >= 30 ? 1 : prev + 1));
+        }, 200); // 5 FPS Loop
+
+        return () => clearInterval(interval);
+    }, [isInView, isLoaded]);
+
+    useEffect(() => {
+        drawFrame(frame - 1);
+    }, [frame]);
 
     return (
-        <Motion.img 
-            src={currentImage}
-            alt={`Hero display sequence ${frame}`}
-            animate={{ y: [0, -15, 0] }}
-            transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-            className="w-full max-w-[1600px] h-auto mix-blend-screen scale-150 pointer-events-none"
-            style={{ 
-                WebkitMaskImage: 'radial-gradient(circle at center, black 30%, transparent 75%)',
-                maskImage: 'radial-gradient(circle at center, black 30%, transparent 75%)',
-                filter: 'contrast(1.15) brightness(1.05)'
-            }}
-        />
+        <div ref={containerRef} className="relative w-full flex justify-center group">
+            {!isLoaded && (
+                <div className="absolute inset-0 bg-neon-blue/10 animate-pulse blur-3xl rounded-full scale-50" />
+            )}
+            
+            <Motion.canvas 
+                ref={canvasRef}
+                width={1200}
+                height={1200}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ 
+                    opacity: 1,
+                    scale: 1
+                }}
+                transition={{ duration: 1.5, ease: "easeOut" }}
+                className="w-full max-w-[1600px] h-auto mix-blend-screen md:scale-150 scale-120 pointer-events-none transition-all duration-1000"
+                style={{ 
+                    WebkitMaskImage: 'radial-gradient(circle at center, black 40%, transparent 75%)',
+                    maskImage: 'radial-gradient(circle at center, black 40%, transparent 75%)',
+                    filter: isLoaded ? 'contrast(1.15) brightness(1.05)' : 'contrast(1) brightness(0.5) grayscale(1)'
+                }}
+            />
+        </div>
     );
 };
 
