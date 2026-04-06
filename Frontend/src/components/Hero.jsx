@@ -1,110 +1,211 @@
-import { useRef, useState, useEffect } from 'react';
-import { motion as Motion, useScroll, useTransform, useSpring, useInView } from 'framer-motion';
+import { useRef, useState, useEffect, useCallback } from 'react';
+import { motion as Motion, useScroll, useTransform, useSpring, useMotionValueEvent } from 'framer-motion';
 import { ArrowRight, Github, Linkedin, Mail, Sparkles, Terminal, Shield } from 'lucide-react';
 import { profile } from '../data/portfolio';
 import { useCursor } from '../context/CursorContext.jsx';
 
-const AvatarSequence = () => {
-    const [frame, setFrame] = useState(1);
-    const [isLoaded, setIsLoaded] = useState(false);
-    const canvasRef = useRef(null);
-    const imagesRef = useRef([]);
-    const containerRef = useRef(null);
-    const isInView = useInView(containerRef);
+// ─────────────────────────────────────────────────────────────
+// Shared image cache (loaded once, used by both Hero and About)
+// ─────────────────────────────────────────────────────────────
+const heroImagesCache = { images: [], loaded: false };
+const moveImagesCache = { images: [], loaded: false };
 
-    useEffect(() => {
-        // Priority loading logic
-        const firstImg = new Image();
-        firstImg.src = `/assets/avatar/01 - Edited.png`;
-        firstImg.onload = () => {
-            imagesRef.current[0] = firstImg;
-            drawFrame(0);
-            
-            // Background load the rest to avoid blocking
-            for (let i = 2; i <= 30; i++) {
-                const img = new Image();
-                img.src = `/assets/avatar/${String(i).padStart(2, '0')} - Edited.png`;
-                img.onload = () => {
-                    imagesRef.current[i - 1] = img;
-                    if (i === 30) setIsLoaded(true);
-                };
-            }
-        };
-    }, []);
+function loadImageSet(folder, count, cache) {
+  if (cache.loaded) return Promise.resolve(cache.images);
+  
+  const promises = Array.from({ length: count }, (_, i) => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.src = `/assets/${folder}/${String(i + 1).padStart(2, '0')} - Edited.png`;
+      img.onload = () => resolve(img);
+      img.onerror = () => resolve(null);
+    });
+  });
 
-    const drawFrame = (index) => {
-        const canvas = canvasRef.current;
-        const img = imagesRef.current[Math.floor(index)];
-        if (!canvas || !img) return;
-        
-        const ctx = canvas.getContext('2d');
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        // Slightly scale down for performance while maintaining clear visuals
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-    };
+  return Promise.all(promises).then((results) => {
+    cache.images = results.filter(img => img !== null);
+    cache.loaded = true;
+    return cache.images;
+  });
+}
 
-    useEffect(() => {
-        if (!isInView || !isLoaded) return; 
-        
-        const interval = setInterval(() => {
-            setFrame(prev => (prev >= 30 ? 1 : prev + 1));
-        }, 200); // 5 FPS Loop
+// ─────────────────────────────────────────────────────────────
+// AboutAvatar: Simple 36-50 loop from avatar-move set ONLY
+// ─────────────────────────────────────────────────────────────
+export const AboutAvatar = ({ isVisible = false }) => {
+  const canvasRef = useRef(null);
+  const frameRef = useRef(35); // start at index 35 = frame 36
+  const [isReady, setIsReady] = useState(false);
 
-        return () => clearInterval(interval);
-    }, [isInView, isLoaded]);
+  const draw = useCallback((index) => {
+    const canvas = canvasRef.current;
+    if (!canvas || !moveImagesCache.images[index]) return;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(moveImagesCache.images[index], 0, 0, canvas.width, canvas.height);
+  }, []);
 
-    useEffect(() => {
-        drawFrame(frame - 1);
-    }, [frame]);
+  // Load move images if not already loaded
+  useEffect(() => {
+    loadImageSet('avatar-move', 50, moveImagesCache).then(() => {
+      setIsReady(true);
+      draw(35); // paint frame 36 immediately
+    });
+  }, [draw]);
 
-    return (
-        <div ref={containerRef} className="relative w-full flex justify-center group">
-            {!isLoaded && (
-                <div className="absolute inset-0 bg-neon-blue/10 animate-pulse blur-3xl rounded-full scale-50" />
-            )}
-            
-            <Motion.canvas 
-                ref={canvasRef}
-                width={1200}
-                height={1200}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ 
-                    opacity: 1,
-                    scale: 1
-                }}
-                transition={{ duration: 1.5, ease: "easeOut" }}
-                className="w-full max-w-[1600px] h-auto mix-blend-screen md:scale-150 scale-120 pointer-events-none transition-all duration-1000"
-                style={{ 
-                    WebkitMaskImage: 'radial-gradient(circle at center, black 40%, transparent 75%)',
-                    maskImage: 'radial-gradient(circle at center, black 40%, transparent 75%)',
-                    filter: isLoaded ? 'contrast(1.15) brightness(1.05)' : 'contrast(1) brightness(0.5) grayscale(1)'
-                }}
-            />
-        </div>
-    );
+  // Loop frames 36-50 (indices 35-49)
+  useEffect(() => {
+    if (!isReady) return;
+    const interval = setInterval(() => {
+      frameRef.current = frameRef.current >= 49 ? 35 : frameRef.current + 1;
+      draw(frameRef.current);
+    }, 100);
+    return () => clearInterval(interval);
+  }, [isReady, draw]);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      width={1200}
+      height={1200}
+      className="w-full h-auto object-cover transition-opacity duration-1000 ease-in-out"
+      style={{
+        opacity: isVisible ? 1 : 0,
+        filter: 'contrast(1.15) brightness(1.05)',
+        WebkitMaskImage: 'radial-gradient(circle at center, black 50%, transparent 80%)',
+        maskImage: 'radial-gradient(circle at center, black 50%, transparent 80%)',
+      }}
+    />
+  );
 };
 
+// ─────────────────────────────────────────────────────────────
+// HeroAvatar: Full lifecycle (idle loop → scroll scrub + move)
+// ─────────────────────────────────────────────────────────────
+const HeroAvatar = ({ scrollYProgress }) => {
+  const canvasRef = useRef(null);
+  const frameRef = useRef(0); // current hero loop frame index
+  const intervalRef = useRef(null);
+  const [isReady, setIsReady] = useState(false);
+  const [isScrolling, setIsScrolling] = useState(false);
+
+  const drawHero = useCallback((index) => {
+    const canvas = canvasRef.current;
+    if (!canvas || !heroImagesCache.images[index]) return;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(heroImagesCache.images[index], 0, 0, canvas.width, canvas.height);
+  }, []);
+
+  const drawMove = useCallback((index) => {
+    const canvas = canvasRef.current;
+    if (!canvas || !moveImagesCache.images[index]) return;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(moveImagesCache.images[index], 0, 0, canvas.width, canvas.height);
+  }, []);
+
+  // ── Load all images on mount ──
+  useEffect(() => {
+    Promise.all([
+      loadImageSet('avatar', 30, heroImagesCache),
+      loadImageSet('avatar-move', 50, moveImagesCache),
+    ]).then(() => {
+      setIsReady(true);
+      drawHero(0); // paint first frame immediately
+    });
+  }, [drawHero]);
+
+  // ── Hero idle loop (30 frames) ──
+  const startLoop = useCallback(() => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    intervalRef.current = setInterval(() => {
+      frameRef.current = (frameRef.current + 1) % 30;
+      drawHero(frameRef.current);
+    }, 100);
+  }, [drawHero]);
+
+  const stopLoop = useCallback(() => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  }, []);
+
+  // Start loop when ready and not scrolling
+  useEffect(() => {
+    if (isReady && !isScrolling) {
+      startLoop();
+    }
+    return () => stopLoop();
+  }, [isReady, isScrolling, startLoop, stopLoop]);
+
+  // ── Scroll detection + Move frame scrubbing ──
+  useMotionValueEvent(scrollYProgress, "change", (v) => {
+    if (!isReady) return;
+
+    if (v < 0.01) {
+      // At top → hero idle loop
+      if (isScrolling) setIsScrolling(false);
+    } else {
+      // Scrolling → stop hero loop, scrub move frames
+      if (!isScrolling) setIsScrolling(true);
+      
+      // Map scroll 0.01→1.0 to move frames 0→49
+      const moveFrame = Math.min(49, Math.floor((v / 1.0) * 50));
+      drawMove(moveFrame);
+    }
+  });
+
+  // ── Scroll-driven positioning (y offset + x drift + scale + zoom) ──
+  const avatarY = useTransform(scrollYProgress, [0, 0.5, 1], [0, 400, 800]);
+  const avatarX = useTransform(scrollYProgress, [0, 0.5, 1], [0, 50, 50]); // Drift right toward About card
+  const avatarScale = useTransform(scrollYProgress, [0, 0.5, 0.8, 1], [1, 0.7, 0.5, 0.4]);
+  const avatarOpacity = useTransform(scrollYProgress, [0, 0.7, 0.85, 1], [1, 1, 0.5, 0]);
+
+  return (
+    <Motion.div
+      style={{
+        y: avatarY,
+        x: avatarX,
+        scale: avatarScale,
+        opacity: avatarOpacity,
+      }}
+      className="relative w-full flex justify-center z-50"
+    >
+      {!isReady && (
+        <div className="absolute inset-0 bg-neon-blue/10 animate-pulse blur-3xl rounded-full scale-50" />
+      )}
+      <canvas
+        ref={canvasRef}
+        width={1200}
+        height={1200}
+        className="w-full max-w-[1600px] h-auto mix-blend-screen md:scale-150 scale-120 pointer-events-none"
+        style={{
+          WebkitMaskImage: 'radial-gradient(circle at center, black 40%, transparent 75%)',
+          maskImage: 'radial-gradient(circle at center, black 40%, transparent 75%)',
+          filter: isReady ? 'contrast(1.15) brightness(1.05)' : 'contrast(1) brightness(0.5) grayscale(1)',
+        }}
+      />
+    </Motion.div>
+  );
+};
+
+// ─────────────────────────────────────────────────────────────
+// Hero Section
+// ─────────────────────────────────────────────────────────────
 const Hero = () => {
   const ref = useRef(null);
-  const [isMobile, setIsMobile] = useState(false);
   const { scrollYProgress } = useScroll({
     target: ref,
     offset: ['start start', 'end start'],
   });
   const { setCursorType } = useCursor();
 
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
   // Parallax & Transition values
   const yText = useTransform(scrollYProgress, [0, 1], ['0%', '15%']);
-  const heroOpacity = useTransform(scrollYProgress, [0, 0.45], [1, 0]);
 
-  // Magnetic button values (simplified for this implementation)
+  // Magnetic button
   const xSpring = useSpring(0, { stiffness: 150, damping: 20 });
   const ySpring = useSpring(0, { stiffness: 150, damping: 20 });
 
@@ -125,13 +226,11 @@ const Hero = () => {
     <section
       id="home"
       ref={ref}
-      className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden  md:px-20 selection:bg-neon-blue/30"
+      className="relative min-h-screen flex flex-col items-center justify-center overflow-visible z-30 md:px-20 selection:bg-neon-blue/30"
     >
-      {/* Immersive Background Layers */}
+      {/* Background Layers */}
       <div className="absolute inset-0 z-0 pointer-events-none">
         <div className="absolute inset-0 hero-grid opacity-[0.10]" />
-        
-        {/* Subtle Glow Spheres */}
         <div className="absolute top-[20%] left-[-10%] w-[40vw] h-[40vw] bg-neon-blue/5 blur-[120px] rounded-full" />
         <div className="absolute bottom-[10%] right-[-10%] w-[40vw] h-[40vw] bg-neon-purple/5 blur-[120px] rounded-full" />
       </div>
@@ -142,7 +241,7 @@ const Hero = () => {
             {/* Left Content Column */}
             <div className="lg:col-span-7">
                 <Motion.div
-                    style={{ y: yText, opacity: isMobile ? 1 : heroOpacity }}
+                    style={{ y: yText }}
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.8, ease: "easeOut" }}
@@ -201,16 +300,12 @@ const Hero = () => {
             {/* Right Visual Column */}
             <div className="lg:col-span-5 relative">
                 <Motion.div
-                    style={{ opacity: isMobile ? 1 : heroOpacity }}
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 1, delay: 0.2 }}
                     className="relative w-full flex justify-center items-center pointer-events-none"
                 >
-                    {/* Avatar Frame Sequence */}
-                    <div className="relative w-full flex justify-center">
-                        <AvatarSequence />
-                    </div>
+                    <HeroAvatar scrollYProgress={scrollYProgress} />
                 </Motion.div>
             </div>
         </div>
@@ -218,7 +313,6 @@ const Hero = () => {
 
       <Motion.a
         href="#about"
-        style={{ opacity: isMobile ? 1 : heroOpacity }}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1, duration: 1 }}

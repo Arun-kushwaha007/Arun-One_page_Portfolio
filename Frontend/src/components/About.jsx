@@ -1,11 +1,13 @@
 import { useRef, useEffect, useState } from 'react';
 import { 
-  motion, 
+  motion as Motion, 
   useMotionValue, 
   useMotionTemplate,
   animate,
   useInView,
-  AnimatePresence
+  AnimatePresence,
+  useScroll,
+  useTransform
 } from 'framer-motion';
 import { 
   Cpu, 
@@ -23,6 +25,7 @@ import {
 } from 'lucide-react';
 import { profile, skills as portfolioSkills, education } from '../data/portfolio';
 import { Section } from './ui/Section';
+import { AboutAvatar } from './Hero';
 
 const AnimatedCounter = ({ value, duration = 1.5 }) => {
   const ref = useRef(null);
@@ -61,12 +64,12 @@ const SpotlightCard = ({ children, className = "", delay = 0, neoColor = "blue" 
   };
 
   return (
-    <motion.div
+    <Motion.div
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.5, delay }}
-      className={`group relative border-x border-t border-white/5 border-b-2 bg-[#030712]/70 backdrop-blur-xl overflow-hidden rounded-2xl transition-all duration-500 hover:bg-[#030712]/90 ${glows[neoColor] || glows.blue} ${className}`}
+      className={`group relative border-x border-t border-white/5 border-b-2 overflow-hidden rounded-2xl transition-all duration-500 hover:bg-[#030712]/60 ${glows[neoColor] || glows.blue} ${className}`}
       onMouseMove={handleMouseMove}
     >
        {/* High-Frequency Brutalist Noise Overlay (5% opacity) */}
@@ -78,7 +81,7 @@ const SpotlightCard = ({ children, className = "", delay = 0, neoColor = "blue" 
        />
        
        <div className="absolute inset-0 z-0 pointer-events-none crt-scanlines opacity-[0.03] group-hover:opacity-[0.05]" />
-       <motion.div
+       <Motion.div
         className="pointer-events-none absolute -inset-px rounded-2xl opacity-0 transition duration-300 group-hover:opacity-100"
         style={{
           background: useMotionTemplate`
@@ -91,7 +94,7 @@ const SpotlightCard = ({ children, className = "", delay = 0, neoColor = "blue" 
         }}
       />
       <div className="relative h-full z-10">{children}</div>
-    </motion.div>
+    </Motion.div>
   );
 };
 
@@ -117,6 +120,11 @@ const IdentificationBanner = () => {
 const About = () => {
   const totalProjects = 10; 
   const yearsExperience = 3;
+  const profileCardRef = useRef(null);
+  const { scrollYProgress } = useScroll();
+  // Crossfade: About avatar fades IN as Hero avatar fades OUT
+  // Hero section is ~730px of ~11000px total = ~7% of page scroll
+  const aboutAvatarOpacity = useTransform(scrollYProgress, [0.07, 0.08], [0, 1]);
 
   const scrollToContact = () => {
     const contactSection = document.getElementById('contact');
@@ -129,7 +137,7 @@ const About = () => {
     <Section id="about" className="py-16">
       <div className="max-w-7xl mx-auto px-4 md:px-8">
         <div className="mb-10 relative">
-            <motion.div 
+            <Motion.div 
                 initial={{ opacity: 0, x: -20 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
@@ -143,41 +151,11 @@ const About = () => {
                 </div>
                 <div className="h-px bg-white/10 flex-1 mb-3 hidden md:block" />
                 <Activity className="text-neon-blue/20 w-10 h-10 mb-2 animate-pulse filter drop-shadow-[0_0_8px_rgba(0,243,255,0.4)]" />
-            </motion.div>
+            </Motion.div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-          
-          {/* 1. Profile Node */}
-          <SpotlightCard className="md:col-span-12 lg:col-span-3 lg:row-span-2 min-h-[400px] lg:min-h-full">
-            <div className="relative h-full w-full group/img flex flex-col">
-               <IdentificationBanner />
-               <div className="absolute inset-0">
-                  <img 
-                    src={profile.image} 
-                    alt={profile.name}
-                    className="w-full h-full object-cover grayscale opacity-60 group-hover/img:grayscale-0 group-hover/img:opacity-100 group-hover/img:scale-105 transition-all duration-1000 ease-out"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#030712] via-transparent to-transparent" />
-               </div>
-               <div className="mt-auto p-6 relative z-20">
-                  <div className="space-y-0.5">
-                      <h3 className="text-2xl font-black text-white leading-tight">{profile.name}</h3>
-                      <div className="flex items-center gap-2 text-neon-blue">
-                         <span className="h-px w-4 bg-neon-blue" />
-                         <span className="font-mono text-[10px] font-bold uppercase tracking-widest leading-none drop-shadow-[0_0_8px_rgba(0,243,255,0.3)]">{profile.role.split('|')[0]}</span>
-                      </div>
-                  </div>
-                  <div className="mt-4 flex flex-wrap gap-2">
-                      <div className="px-2 py-0.5 rounded-full bg-neon-blue/10 border border-neon-blue/30 text-[9px] text-neon-blue font-mono uppercase font-bold">
-                         Available_Node
-                      </div>
-                  </div>
-               </div>
-            </div>
-          </SpotlightCard>
-
-          {/* 2. Bio Dossier - Row 1 */}
+          {/* 1. Bio Dossier - Row 1 (Now first to move profile to right) */}
           <SpotlightCard className="md:col-span-12 lg:col-span-9 p-0" delay={0.1}>
              <div className="h-8 border-b border-white/5 bg-white/5 px-4 flex items-center justify-between">
                 <div className="flex gap-1.5">
@@ -211,6 +189,33 @@ const About = () => {
              </div>
           </SpotlightCard>
 
+          {/* 2. Profile Node (Moved to Right) */}
+          <SpotlightCard className="md:col-span-12 lg:col-span-3 lg:row-span-2 min-h-[400px] lg:min-h-full">
+            <div ref={profileCardRef} className="relative h-full w-full group/img flex flex-col">
+               <IdentificationBanner />
+               <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+                  <Motion.div style={{ opacity: aboutAvatarOpacity }}>
+                    <AboutAvatar isVisible={true} />
+                  </Motion.div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#030712] via-transparent to-transparent" />
+               </div>
+               <div className="mt-auto p-6 relative z-20">
+                  <div className="space-y-0.5">
+                      <h3 className="text-2xl font-black text-white leading-tight">{profile.name}</h3>
+                      <div className="flex items-center gap-2 text-neon-blue">
+                         <span className="h-px w-4 bg-neon-blue" />
+                         <span className="font-mono text-[10px] font-bold uppercase tracking-widest leading-none drop-shadow-[0_0_8px_rgba(0,243,255,0.3)]">{profile.role.split('|')[0]}</span>
+                      </div>
+                  </div>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                      <div className="px-2 py-0.5 rounded-full bg-neon-blue/10 border border-neon-blue/30 text-[9px] text-neon-blue font-mono uppercase font-bold">
+                         Available_Node
+                      </div>
+                  </div>
+               </div>
+            </div>
+          </SpotlightCard>
+
           {/* 3. Performance Stats Row - ALL HORIZONTAL */}
           <SpotlightCard className="md:col-span-4 lg:col-span-3 p-6 flex flex-col justify-between" delay={0.2}>
              <div className="space-y-4">
@@ -226,7 +231,7 @@ const About = () => {
              </div>
              <div className="mt-6 pt-4 border-t border-white/10">
                 <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
-                    <motion.div initial={{ width: 0 }} whileInView={{ width: "70%" }} transition={{ duration: 1.5 }} className="h-full bg-neon-blue" />
+                    <Motion.div initial={{ width: 0 }} whileInView={{ width: "70%" }} transition={{ duration: 1.5 }} className="h-full bg-neon-blue" />
                 </div>
                 <div className="flex justify-between mt-1 text-[8px] font-mono text-white/20">
                     <span>L3.ARCHITECT</span>
@@ -249,7 +254,7 @@ const About = () => {
              </div>
              <div className="mt-6 pt-4 border-t border-white/10">
                 <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
-                    <motion.div initial={{ width: 0 }} whileInView={{ width: "85%" }} transition={{ duration: 1.5 }} className="h-full bg-neon-purple" />
+                    <Motion.div initial={{ width: 0 }} whileInView={{ width: "85%" }} transition={{ duration: 1.5 }} className="h-full bg-neon-purple" />
                 </div>
                 <div className="flex justify-between mt-1 text-[8px] font-mono text-white/20">
                     <span>DEPLOYED_NODES</span>
