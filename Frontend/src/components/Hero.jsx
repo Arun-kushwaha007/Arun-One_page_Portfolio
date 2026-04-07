@@ -156,12 +156,38 @@ const HeroAvatar = ({ scrollYProgress }) => {
       drawMove(moveFrame);
     }
   });
+  // ── Mobile detection for position adjustments ──
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 1024);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
 
-  // ── Scroll-driven positioning (y offset + x drift + scale + zoom) ──
-  const avatarY = useTransform(scrollYProgress, [0, 0.5, 1], [0, 400, 800]);
-  const avatarX = useTransform(scrollYProgress, [0, 0.5, 1], [0, 50, 50]); // Drift right toward About card
-  const avatarScale = useTransform(scrollYProgress, [0, 0.5, 0.8, 1], [1, 0.7, 0.5, 0.4]);
-  const avatarOpacity = useTransform(scrollYProgress, [0, 0.7, 0.85, 1], [1, 1, 0.5, 0]);
+  // ── Scroll-driven positioning (mobile vs desktop) ──
+  // Mobile: shorter Y travel, no X drift, faster shrink
+  // Desktop: full descent to About section
+  const avatarY = useTransform(
+    scrollYProgress, 
+    [0, 0.5, 1], 
+    isMobile ? [0, 300, 550] : [0, 400, 800]
+  );
+  const avatarX = useTransform(
+    scrollYProgress, 
+    [0, 0.5, 1], 
+    isMobile ? [0, 0, 0] : [0, 50, 50]
+  );
+  const avatarScale = useTransform(
+    scrollYProgress, 
+    [0, 0.5, 0.8, 1], 
+    isMobile ? [1, 0.95, 0.92, 0.87] : [1, 0.7, 0.5, 0.4]
+  );
+  const avatarOpacity = useTransform(
+    scrollYProgress, 
+    isMobile ? [0, 0.5, 0.7, 0.85] : [0, 0.7, 0.85, 1], 
+    [1, 1, 0.5, 0]
+  );
 
   return (
     <Motion.div
@@ -180,7 +206,7 @@ const HeroAvatar = ({ scrollYProgress }) => {
         ref={canvasRef}
         width={1200}
         height={1200}
-        className="w-full max-w-[1600px] h-auto mix-blend-screen md:scale-150 scale-120 pointer-events-none"
+        className="w-full max-w-[1600px] h-auto mix-blend-screen md:scale-150 pointer-events-none"
         style={{
           WebkitMaskImage: 'radial-gradient(circle at center, black 40%, transparent 75%)',
           maskImage: 'radial-gradient(circle at center, black 40%, transparent 75%)',
@@ -226,7 +252,7 @@ const Hero = () => {
     <section
       id="home"
       ref={ref}
-      className="relative min-h-screen flex flex-col items-center justify-center overflow-visible z-30 md:px-20 selection:bg-neon-blue/30"
+      className="relative min-h-screen flex flex-col items-center justify-center overflow-y-visible z-30 px-4 md:px-20 selection:bg-neon-blue/30"
     >
       {/* Background Layers */}
       <div className="absolute inset-0 z-0 pointer-events-none">
@@ -235,7 +261,7 @@ const Hero = () => {
         <div className="absolute bottom-[10%] right-[-10%] w-[40vw] h-[40vw] bg-neon-purple/5 blur-[120px] rounded-full" />
       </div>
 
-      <div className="container relative z-10 mx-auto px-6 py-20">
+      <div className="container relative z-10 mx-auto px-6 py-16 md:py-20">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 items-center">
             
             {/* Left Content Column */}
@@ -249,7 +275,7 @@ const Hero = () => {
                     onMouseLeave={() => setCursorType('default')}
                 >
                     {/* Available Status */}
-                    <div className="flex items-center gap-3 mb-10">
+                    <div className="flex items-center gap-3 mb-6 md:mb-10">
                         <div className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-full">
                             <span className="relative flex h-2 w-2">
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-neon-green opacity-75"></span>
@@ -261,34 +287,34 @@ const Hero = () => {
                         </div>
                     </div>
 
-                    <h1 className="text-5xl sm:text-7xl lg:text-8xl font-black text-white leading-[1.05] tracking-tighter mb-8 cursor-default">
+                    <h1 className="text-4xl sm:text-6xl lg:text-8xl font-black text-white leading-[1.05] tracking-tighter mb-4 md:mb-8 cursor-default">
                         Design. Code. <br />
                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-neon-blue via-white to-neon-purple">
                           Engineering.
                         </span>
                     </h1>
 
-                    <p className="text-lg md:text-xl text-gray-400 font-light leading-relaxed max-w-xl mb-12">
+                    <p className="text-md md:text-xl text-gray-400 font-light leading-relaxed max-w-xl mb-6 md:mb-12">
                         {profile.hero.summary}
                     </p>
 
                     {/* Action Area */}
-                    <div className="flex flex-col sm:flex-row items-center gap-8">
+                    <div className="flex flex-col sm:flex-row items-center gap-4 md:gap-8">
                         <Motion.a
                             href={profile.hero.primaryCta.href}
                             style={{ x: xSpring, y: ySpring }}
                             onMouseMove={handleMagnetic}
                             onMouseLeave={resetMagnetic}
-                            className="relative group px-10 py-5 bg-white text-black rounded-full overflow-hidden transition-all duration-300 transform active:scale-95 flex items-center gap-3"
+                            className="relative group px-4 py-2 md:px-10 md:py-5 bg-white text-black rounded-full overflow-hidden transition-all duration-300 transform active:scale-95 flex items-center gap-3"
                         >
-                            <span className="relative z-10 font-bold uppercase tracking-widest text-xs">View My Work</span>
+                            <span className="relative z-10 font-bold uppercase tracking-widest text-[10px] md:text-xs">View My Work</span>
                             <ArrowRight className="relative z-10 w-5 h-5 group-hover:translate-x-1 transition-transform" />
                             <div className="absolute inset-0 bg-neon-blue translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
                         </Motion.a>
 
                         <a 
                             href={profile.hero.secondaryCta.href}
-                            className="text-gray-400 hover:text-white font-mono text-xs tracking-[0.3em] uppercase transition-all flex items-center gap-3 group"
+                            className="text-gray-400 hover:text-white font-mono text-[10px] md:text-xs tracking-[0.3em] uppercase transition-all flex items-center gap-3 group"
                         >
                             <span className="group-hover:translate-x-1 transition-transform inline-block">Contact Me</span>
                             <div className="h-px w-8 bg-gray-800 transition-all group-hover:bg-neon-purple group-hover:w-12 ml-2" />
@@ -298,7 +324,7 @@ const Hero = () => {
             </div>
 
             {/* Right Visual Column */}
-            <div className="lg:col-span-5 relative">
+            <div className="lg:col-span-5 relative -mt-20 md:mt-0">
                 <Motion.div
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
@@ -316,7 +342,7 @@ const Hero = () => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1, duration: 1 }}
-        className="absolute bottom-12 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3 text-gray-500 hover:text-white transition-colors"
+        className="hidden absolute  md:bottom-12 left-1/2 -translate-x-1/2 md:flex flex-col items-center gap-3 text-gray-500 hover:text-white transition-colors"
       >
         <span className="text-[10px] uppercase font-mono tracking-[0.4em] vertical-text">Explore</span>
         <div className="w-[1px] h-16 bg-gradient-to-b from-gray-700 to-transparent relative">

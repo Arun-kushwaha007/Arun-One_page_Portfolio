@@ -121,10 +121,21 @@ const About = () => {
   const totalProjects = 10; 
   const yearsExperience = 3;
   const profileCardRef = useRef(null);
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 1024);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+
   const { scrollYProgress } = useScroll();
-  // Crossfade: About avatar fades IN as Hero avatar fades OUT
-  // Hero section is ~730px of ~11000px total = ~7% of page scroll
-  const aboutAvatarOpacity = useTransform(scrollYProgress, [0.07, 0.08], [0, 1]);
+  // Mobile: appear much earlier since layout is stacked
+  const aboutAvatarOpacity = useTransform(
+    scrollYProgress, 
+    isMobile ? [0.049, 0.08] : [0.07, 0.08], 
+    [0, 1]
+  );
 
   const scrollToContact = () => {
     const contactSection = document.getElementById('contact');
@@ -136,7 +147,9 @@ const About = () => {
   return (
     <Section id="about" className="py-16">
       <div className="max-w-7xl mx-auto px-4 md:px-8">
-        <div className="mb-10 relative">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+          {/* Section Heading (inside grid for mobile reordering) */}
+          <div className="md:col-span-12 lg:order-first mb-6 relative">
             <Motion.div 
                 initial={{ opacity: 0, x: -20 }}
                 whileInView={{ opacity: 1, x: 0 }}
@@ -152,11 +165,10 @@ const About = () => {
                 <div className="h-px bg-white/10 flex-1 mb-3 hidden md:block" />
                 <Activity className="text-neon-blue/20 w-10 h-10 mb-2 animate-pulse filter drop-shadow-[0_0_8px_rgba(0,243,255,0.4)]" />
             </Motion.div>
-        </div>
+          </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-          {/* 1. Bio Dossier - Row 1 (Now first to move profile to right) */}
-          <SpotlightCard className="md:col-span-12 lg:col-span-9 p-0" delay={0.1}>
+          {/* 1. Bio Dossier - Row 1 */}
+          <SpotlightCard className="md:col-span-12 lg:col-span-9 p-0 lg:order-none" delay={0.1}>
              <div className="h-8 border-b border-white/5 bg-white/5 px-4 flex items-center justify-between">
                 <div className="flex gap-1.5">
                     <div className="w-1.5 h-1.5 rounded-full bg-red-500/30" />
@@ -189,8 +201,8 @@ const About = () => {
              </div>
           </SpotlightCard>
 
-          {/* 2. Profile Node (Moved to Right) */}
-          <SpotlightCard className="md:col-span-12 lg:col-span-3 lg:row-span-2 min-h-[400px] lg:min-h-full">
+          {/* 2. Profile Node (First on mobile, Right on desktop) */}
+          <SpotlightCard className="md:col-span-12 lg:col-span-3 lg:row-span-2 min-h-[400px] lg:min-h-full order-first lg:order-none">
             <div ref={profileCardRef} className="relative h-full w-full group/img flex flex-col">
                <IdentificationBanner />
                <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
