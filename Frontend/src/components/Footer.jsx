@@ -3,7 +3,7 @@ import { Github, Linkedin, Code } from 'lucide-react';
 
 const Footer = () => {
   return (
-    <footer className="py-8 border-t border-white/10 bg-black/50 backdrop-blur-sm">
+    <footer className="pb-24 md:pb-0 py-2 ml-8 md:ml-0 md:py-8 border-t border-white/10 bg-black/50 backdrop-blur-sm">
       <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4">
         <p className="text-gray-400 text-sm">
           © {new Date().getFullYear()} {profile.name}. All rights reserved.
