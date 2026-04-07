@@ -82,7 +82,7 @@ const Skills = () => {
   }, []);
 
   return (
-    <section id="skills" className="min-h-screen flex flex-col items-center justify-center relative z-10 py-20">
+    <section id="skills" className="min-h-screen flex flex-col items-center justify-center relative z-10 py-20 ml-8 md:ml-0">
       <div className="flex flex-col items-center mb-12">
         <h2 className="text-4xl md:text-6xl font-bold mb-6 text-center">
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-neon-blue to-neon-green">
