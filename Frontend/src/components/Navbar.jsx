@@ -19,8 +19,8 @@ const Navbar = () => {
   ];
 
   return (
-    <div className="fixed bottom-4 md:bottom-8 left-1/2 -translate-x-1/2 z-[100] w-[90%] md:w-auto max-w-md md:max-w-none">
-      <div className="flex items-end justify-between md:justify-center gap-1 md:gap-2 px-3 py-2 md:px-4 md:py-3 bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl shadow-neon-blue/10">
+    <div className="fixed bottom-4 md:bottom-4 left-1/2 -translate-x-1/2 z-[100] w-[90%] md:w-auto max-w-md md:max-w-none">
+      <div className="flex items-end justify-between md:justify-center gap-1 md:gap-2 px-3 py-2 md:px-4 md:py-3 bg-black/40 backdrop-blur-xl border border-white/10 rounded-lg md:rounded-2xl shadow-2xl shadow-neon-blue/10">
         {navLinks.map((link, index) => {
           const isHovered = hoveredIndex === index;
           
@@ -32,6 +32,7 @@ const Navbar = () => {
                 setHoveredIndex(index);
                 playSound('hover');
               }}
+              onMouseLeave={() => setHoveredIndex(null)}
               onClick={() => playSound('click')}
               className="relative group"
             >
