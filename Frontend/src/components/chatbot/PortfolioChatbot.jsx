@@ -1,102 +1,62 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
-import { MessageCircleMore, Mic, MicOff, SendHorizonal, Sparkles, X } from 'lucide-react';
-import { education, profile, projects, skills } from '../../data/portfolio';
+import { AnimatePresence, motion, LayoutGroup } from 'framer-motion';
+import { 
+  MessageCircleMore, 
+  Mic, 
+  MicOff, 
+  SendHorizonal, 
+  Sparkles, 
+  X, 
+  Terminal, 
+  Activity, 
+  Command,
+  Cpu,
+  Layers,
+  Zap,
+  Trash2,
+  ChevronRight,
+  ShieldCheck,
+  Bot
+} from 'lucide-react';
+import { profile } from '../../data/portfolio';
+import { BOT_CONFIG, INTENTS, QUICK_COMMANDS } from './data/ChatbotConfig';
 
-const TYPING_DELAY_MS = 220;
-const TYPING_SPEED_MS = 16;
-
-function buildIntents() {
-  const skillStack = Object.values(skills)
-    .flatMap((group) => group.items)
-    .slice(0, 10)
-    .join(', ');
-
-  return [
-    {
-      id: 'intro',
-      label: 'Who are you?',
-      reaction: 'introducing',
-      keywords: ['who', 'about', 'arun', 'yourself'],
-      reply:
-        "I'm Arun Kushwaha, a full-stack engineer who likes real-time systems, cloud platforms, and applied AI. This avatar version of me is the fast lane through the portfolio.",
-      followUps: ['projects', 'skills', 'contact'],
-    },
-    {
-      id: 'projects',
-      label: 'Show me projects',
-      reaction: 'project-mode',
-      keywords: ['project', 'projects', 'build', 'portfolio', 'work'],
-      reply: `Start with ${projects[0].title}. It's a production-style document pipeline, and it shows how I think about throughput, reliability, and system design. I also built real-time collaboration and AI-heavy products if you want the next layer.`,
-      followUps: ['skills', 'experience', 'contact'],
-    },
-    {
-      id: 'skills',
-      label: 'What is your stack?',
-      reaction: 'stack-scan',
-      keywords: ['stack', 'skills', 'tech', 'tools'],
-      reply: `I move across backend, frontend, and infra. My core stack includes ${skillStack}. I care less about hype and more about shipping systems that stay measurable and stable.`,
-      followUps: ['projects', 'experience', 'contact'],
-    },
-    {
-      id: 'experience',
-      label: 'Tell me about experience',
-      reaction: 'timeline',
-      keywords: ['experience', 'intern', 'education', 'college', 'nit'],
-      reply: `I'm a final-year engineer at ${education.institution}, and I've also worked on internship and freelance builds. The pattern across all of it is ownership: I like getting features from idea to working delivery.`,
-      followUps: ['projects', 'skills', 'contact'],
-    },
-    {
-      id: 'contact',
-      label: 'How do I contact you?',
-      reaction: 'contact-open',
-      keywords: ['contact', 'email', 'hire', 'reach', 'message', 'resume'],
-      reply: `The cleanest way to reach me is ${profile.email}. If you want to talk about roles, projects, or collaboration, send me a message there and I'll take it from there.`,
-      followUps: ['projects', 'intro', 'skills'],
-    },
-    {
-      id: 'fallback',
-      label: 'Try another question',
-      reaction: 'reroute',
-      keywords: [],
-      reply:
-        "I'm best at talking about Arun's projects, stack, experience, and contact details. Hit one of the guided prompts and I'll stay useful instead of pretending to know everything.",
-      followUps: ['intro', 'projects', 'contact'],
-    },
-  ];
-}
+const TYPING_DELAY_MS = 250;
+const TYPING_SPEED_MS = 14;
 
 function createMessage(role, text, extras = {}) {
   return {
     id: `${role}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     role,
     text,
+    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     ...extras,
   };
 }
 
 export default function PortfolioChatbot() {
-  const intents = useMemo(() => buildIntents(), []);
   const intentMap = useMemo(
-    () => Object.fromEntries(intents.map((intent) => [intent.id, intent])),
-    [intents],
+    () => Object.fromEntries(INTENTS.map((intent) => [intent.id, intent])),
+    []
   );
 
   const welcomeMessage = useMemo(
     () =>
       createMessage(
         'bot',
-        "Hey, I'm Arun in avatar mode. Ask about my projects, stack, experience, or how to contact me.",
+        `Initializing System... ${BOT_CONFIG.personality} How can I assist you today?`,
+        { reaction: 'wave' }
       ),
-    [],
+    []
   );
 
   const [messages, setMessages] = useState([welcomeMessage]);
-  const [promptIds, setPromptIds] = useState(['intro', 'projects', 'skills', 'experience', 'contact']);
+  const [promptIds, setPromptIds] = useState(['intro', 'projects', 'stack', 'metrics', 'contact']);
   const [reaction, setReaction] = useState('idle');
   const [voiceEnabled, setVoiceEnabled] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [draft, setDraft] = useState('');
+  const [isThinking, setIsThinking] = useState(false);
 
   const typingIntervalRef = useRef(null);
   const thinkingTimeoutRef = useRef(null);
@@ -104,29 +64,28 @@ export default function PortfolioChatbot() {
 
   useEffect(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      scrollRef.current.scrollTo({
+        top: scrollRef.current.scrollHeight,
+        behavior: 'smooth'
+      });
     }
-  }, [messages]);
+  }, [messages, isThinking]);
 
   useEffect(() => {
     return () => {
-      if (typingIntervalRef.current) {
-        window.clearInterval(typingIntervalRef.current);
-      }
-      if (thinkingTimeoutRef.current) {
-        window.clearTimeout(thinkingTimeoutRef.current);
-      }
+      if (typingIntervalRef.current) window.clearInterval(typingIntervalRef.current);
+      if (thinkingTimeoutRef.current) window.clearTimeout(thinkingTimeoutRef.current);
       window.speechSynthesis?.cancel?.();
     };
   }, []);
 
   const speakReply = (text) => {
-    if (!voiceEnabled || !window.speechSynthesis || !text) {
-      return;
-    }
-
+    if (!voiceEnabled || !window.speechSynthesis || !text) return;
     window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(new SpeechSynthesisUtterance(text));
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 1.1;
+    utterance.pitch = 1;
+    window.speechSynthesis.speak(utterance);
   };
 
   const clearActivePlayback = () => {
@@ -134,22 +93,23 @@ export default function PortfolioChatbot() {
       window.clearInterval(typingIntervalRef.current);
       typingIntervalRef.current = null;
     }
-
     if (thinkingTimeoutRef.current) {
       window.clearTimeout(thinkingTimeoutRef.current);
       thinkingTimeoutRef.current = null;
     }
-
     window.speechSynthesis?.cancel?.();
   };
 
   const resolveIntent = (rawText = '') => {
     const normalized = rawText.trim().toLowerCase();
-    if (!normalized) {
-      return intentMap.fallback;
-    }
+    
+    // Check for explicit commands
+    const command = QUICK_COMMANDS.find(q => normalized.includes(q.command));
+    if (command) return intentMap[command.id];
 
-    const scoredIntent = intents
+    if (!normalized) return intentMap.fallback;
+
+    const scoredIntent = INTENTS
       .filter((intent) => intent.id !== 'fallback')
       .map((intent) => ({
         intent,
@@ -159,19 +119,25 @@ export default function PortfolioChatbot() {
       }))
       .sort((left, right) => right.score - left.score)[0];
 
-    if (scoredIntent?.score > 0) {
-      return scoredIntent.intent;
-    }
-
-    return intentMap.fallback;
+    return (scoredIntent?.score > 0) ? scoredIntent.intent : intentMap.fallback;
   };
 
   const typeBotReply = (intent) => {
     clearActivePlayback();
+    setIsThinking(true);
     setReaction('thinking');
 
     thinkingTimeoutRef.current = window.setTimeout(() => {
-      const botMessage = createMessage('bot', '', { isTyping: true, intentId: intent.id });
+      setIsThinking(false);
+      
+      if (intent.action === 'CLEAR_CHAT') {
+        setMessages([welcomeMessage]);
+        setPromptIds(['intro', 'projects', 'stack']);
+        setReaction('idle');
+        return;
+      }
+
+      const botMessage = createMessage('bot', '', { isTyping: true, reaction: intent.reaction });
       let nextIndex = 0;
 
       setMessages((current) => [...current, botMessage]);
@@ -180,7 +146,6 @@ export default function PortfolioChatbot() {
 
       typingIntervalRef.current = window.setInterval(() => {
         nextIndex += 1;
-
         setMessages((current) =>
           current.map((message) =>
             message.id === botMessage.id
@@ -189,8 +154,8 @@ export default function PortfolioChatbot() {
                   text: intent.reply.slice(0, nextIndex),
                   isTyping: nextIndex < intent.reply.length,
                 }
-              : message,
-          ),
+              : message
+          )
         );
 
         if (nextIndex >= intent.reply.length) {
@@ -202,187 +167,232 @@ export default function PortfolioChatbot() {
     }, TYPING_DELAY_MS);
   };
 
-  const sendIntent = (intent, userLabel) => {
-    setMessages((current) => [...current, createMessage('user', userLabel)]);
+  const sendMessage = (text, isInternal = false) => {
+    const intent = resolveIntent(text);
+    if (!isInternal) {
+      setMessages((current) => [...current, createMessage('user', text)]);
+    }
     typeBotReply(intent);
   };
 
-  const handlePromptClick = (intentId) => {
-    const intent = intentMap[intentId] ?? intentMap.fallback;
-    sendIntent(intent, intent.label);
+  const handleCommandClick = (cmd) => {
+    setMessages((current) => [...current, createMessage('user', cmd.label, { isCommand: true })]);
+    sendMessage(cmd.command, true);
   };
 
   const handleSubmit = (event) => {
     event.preventDefault();
     const nextDraft = draft.trim();
-    if (!nextDraft) {
-      return;
-    }
-
-    const intent = resolveIntent(nextDraft);
+    if (!nextDraft) return;
     setDraft('');
-    sendIntent(intent, nextDraft);
+    sendMessage(nextDraft);
   };
-
-  const promptOptions = promptIds.map((id) => intentMap[id]).filter(Boolean);
 
   return (
     <>
+      {/* Floating Trigger Button */}
       <motion.button
         type="button"
-        aria-label="Open Arun avatar chat"
         onClick={() => setIsOpen(true)}
         whileHover={{ scale: 1.05, y: -2 }}
-        whileTap={{ scale: 0.98 }}
-        className={`fixed bottom-6 right-6 z-[120] flex items-center gap-3 rounded-full border px-4 py-3 shadow-[0_18px_40px_rgba(0,0,0,0.35)] backdrop-blur-xl transition md:bottom-8 md:right-8 ${
+        whileTap={{ scale: 0.95 }}
+        className={`fixed bottom-6 right-6 z-[120] flex items-center gap-4 rounded-3xl border p-2 shadow-2xl backdrop-blur-2xl transition-all duration-500 md:bottom-8 md:right-8 ${
           isOpen
-            ? 'pointer-events-none opacity-0'
-            : 'border-cyan-300/35 bg-[linear-gradient(135deg,rgba(0,243,255,0.2),rgba(10,255,10,0.12))] text-white'
+            ? 'pointer-events-none translate-y-12 opacity-0'
+            : 'border-cyan-500/30 bg-black/60 text-white'
         }`}
       >
-        <span className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-black/55">
-          <MessageCircleMore className="h-5 w-5 text-cyan-100" />
-        </span>
-        <span className="hidden text-left md:block">
-          <span className="block text-[10px] uppercase tracking-[0.28em] text-cyan-100/75">Avatar Chat</span>
-          <span className="block text-sm font-semibold text-white">Talk to Arun</span>
-        </span>
+        <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-gradient-to-br from-cyan-500/20 to-blue-600/20">
+          <Bot className="h-7 w-7 text-cyan-400" />
+          <motion.div 
+            animate={{ scale: [1, 1.2, 1] }} 
+            transition={{ duration: 2, repeat: Infinity }}
+            className="absolute -right-1 -top-1 h-3 w-3 rounded-full bg-green-500 shadow-[0_0_10px_#22c55e]" 
+          />
+        </div>
+        <div className="pr-6 text-left">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-400">Arun Avatar</p>
+          <p className="text-sm font-medium text-white/90">Systems AI Online</p>
+        </div>
       </motion.button>
 
+      {/* Main Chat Panel */}
       <AnimatePresence>
-        {isOpen ? (
+        {isOpen && (
           <motion.section
-            key="chatbot-panel"
-            initial={{ opacity: 0, y: 20, scale: 0.96 }}
+            initial={{ opacity: 0, y: 40, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 18, scale: 0.97 }}
-            transition={{ duration: 0.22, ease: 'easeOut' }}
-            className="fixed inset-x-3 bottom-3 z-[125] md:inset-auto md:bottom-8 md:right-8 md:w-[min(30rem,calc(100vw-2rem))]"
+            exit={{ opacity: 0, y: 30, scale: 0.98 }}
+            className="fixed inset-x-4 bottom-4 top-4 md:top-auto z-[130] flex flex-col overflow-hidden rounded-[2.5rem] border border-white/10 bg-[#030712]/95 shadow-[0_32px_128px_rgba(0,0,0,0.8)] backdrop-blur-3xl md:inset-auto md:bottom-8 md:right-8 md:h-[720px] md:w-[440px]"
           >
-            <div className="relative overflow-hidden rounded-[2rem] border border-cyan-400/20 bg-[radial-gradient(circle_at_top_left,rgba(0,243,255,0.18),transparent_28%),radial-gradient(circle_at_bottom_right,rgba(10,255,10,0.14),transparent_25%),rgba(3,6,11,0.94)] p-4 shadow-[0_0_80px_rgba(0,243,255,0.08)] backdrop-blur-xl md:p-5">
-              <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.04),transparent_28%,transparent_72%,rgba(0,243,255,0.08))]" />
-
-              <div className="relative z-10 mb-4 flex items-start justify-between gap-4">
-                <div className="flex min-w-0 items-center gap-3">
-                  <motion.div
-                    animate={{
-                      y: reaction === 'thinking' ? [0, -6, 0] : 0,
-                      rotate: reaction === 'project-mode' ? [0, -1.25, 1.25, 0] : 0,
-                      scale: reaction === 'contact-open' ? [1, 1.03, 1] : 1,
-                    }}
-                    transition={{
-                      duration: 1.8,
-                      repeat: reaction === 'idle' ? 0 : Infinity,
-                      ease: 'easeInOut',
-                    }}
-                    className="relative h-18 w-18 shrink-0"
+            {/* Header Area */}
+            <div className="relative border-b border-white/5 bg-gradient-to-b from-white/5 to-transparent p-6 shrink-0">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <motion.div 
+                    animate={reaction !== 'idle' ? { scale: [1, 1.05, 1], rotate: [0, 2, -2, 0] } : {}}
+                    transition={{ duration: 0.5, repeat: reaction !== 'idle' ? Infinity : 0 }}
+                    className="relative"
                   >
-                    <div className="absolute -inset-2 rounded-[1.5rem] bg-gradient-to-br from-cyan-400/30 via-transparent to-neon-green/20 blur-xl" />
-                    <div className="relative overflow-hidden rounded-[1.5rem] border border-white/10 bg-black/55 p-2">
-                      <img
-                        src={profile.image}
-                        alt={`${profile.name} avatar`}
-                        className="h-14 w-14 rounded-[1rem] object-cover"
-                      />
-                    </div>
+                    <div className="absolute -inset-1 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 blur-sm opacity-50" />
+                    <img src={profile.image} alt="Arun" className="relative h-14 w-14 rounded-2xl border border-white/20 object-cover" />
                   </motion.div>
-
-                  <div className="min-w-0">
-                    <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/25 bg-cyan-300/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-cyan-100">
-                      <Sparkles className="h-3.5 w-3.5" />
-                      Avatar Protocol
-                    </div>
-                    <h2 className="mt-2 text-xl font-bold leading-tight text-white">
-                      Chat with Arun&apos;s portfolio avatar
+                  <div>
+                    <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                      Arun&apos;s Avatar
+                      <ShieldCheck className="h-4 w-4 text-cyan-400" />
                     </h2>
-                    <p className="mt-1 text-sm leading-6 text-slate-300">
-                      Guided, typed, and built to answer portfolio questions fast.
-                    </p>
+                    <div className="flex items-center gap-3 mt-1">
+                      <span className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider text-green-400">
+                        <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
+                        {BOT_CONFIG.status}
+                      </span>
+                      <span className="text-[10px] text-white/30 truncate max-w-[120px]">
+                        Latency: {BOT_CONFIG.load}
+                      </span>
+                    </div>
                   </div>
                 </div>
-
-                <button
-                  type="button"
-                  aria-label="Close Arun avatar chat"
+                <button 
                   onClick={() => setIsOpen(false)}
-                  className="rounded-full border border-white/10 bg-black/40 p-2 text-white/75 transition hover:border-white/25 hover:text-white"
+                  className="group flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/50 transition-all hover:bg-white/10 hover:text-white"
                 >
-                  <X className="h-4 w-4" />
+                  <X className="h-5 w-5 transition-transform group-hover:rotate-90" />
                 </button>
               </div>
 
-              <div className="relative z-10 rounded-[1.7rem] border border-white/10 bg-black/40 p-4">
-                <div className="mb-4 flex items-center justify-between gap-4">
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.3em] text-cyan-200/70">Live Conversation</p>
-                    <p className="mt-1 text-sm font-semibold text-white">Mostly guided, fast, and on-topic.</p>
-                  </div>
+              {/* Status Bar */}
+              <div className="mt-6 flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
+                {QUICK_COMMANDS.map((cmd) => (
+                  <button
+                    key={cmd.id}
+                    onClick={() => handleCommandClick(cmd)}
+                    className="flex shrink-0 items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[11px] font-medium text-white/70 transition-all hover:border-cyan-500/50 hover:bg-cyan-500/10 hover:text-cyan-400"
+                  >
+                    {cmd.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Chat Messages */}
+            <div 
+              ref={scrollRef}
+              className="flex-1 overflow-y-auto p-6 space-y-6 scroll-smooth"
+            >
+              <LayoutGroup>
+                {messages.map((msg) => (
+                  <motion.div
+                    layout
+                    initial={{ opacity: 0, x: msg.role === 'user' ? 20 : -20, y: 10 }}
+                    animate={{ opacity: 1, x: 0, y: 0 }}
+                    key={msg.id}
+                    className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div className={`group relative max-w-[85%] rounded-[1.5rem] p-4 text-sm leading-relaxed shadow-xl border ${
+                      msg.role === 'user' 
+                        ? 'border-cyan-500/30 bg-gradient-to-br from-cyan-600/20 to-blue-700/20 text-white rounded-tr-none' 
+                        : 'border-white/10 bg-white/5 text-white/90 rounded-tl-none font-light'
+                    }`}>
+                      {msg.role === 'bot' && (
+                        <div className="absolute -left-10 top-0 hidden md:block">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/5 bg-white/5">
+                            {msg.reaction === 'cpu' ? <Cpu className="h-4 w-4 text-cyan-400" /> : 
+                             msg.reaction === 'project-mode' ? <Layers className="h-4 w-4 text-green-400" /> :
+                             <Sparkles className="h-4 w-4 text-blue-400" />}
+                          </div>
+                        </div>
+                      )}
+                      
+                      <div className="whitespace-pre-wrap">
+                        {msg.text}
+                        {msg.isTyping && (
+                          <motion.span 
+                            animate={{ opacity: [0, 1, 0] }}
+                            transition={{ repeat: Infinity, duration: 0.8 }}
+                            className="ml-1 inline-block h-4 w-1.5 rounded-full bg-cyan-400 align-middle"
+                          />
+                        )}
+                      </div>
+                      
+                      <div className={`mt-2 flex items-center gap-2 text-[10px] ${msg.role === 'user' ? 'text-cyan-300/50' : 'text-white/30'}`}>
+                        {msg.timestamp}
+                        {msg.isCommand && <Command className="h-2.5 w-2.5" />}
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+                
+                {isThinking && (
+                  <motion.div 
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="flex justify-start"
+                  >
+                    <div className="rounded-2xl border border-white/5 bg-white/5 p-4">
+                      <div className="flex gap-1.5">
+                        {[0, 1, 2].map((d) => (
+                          <motion.div
+                            key={d}
+                            animate={{ y: [0, -4, 0] }}
+                            transition={{ repeat: Infinity, duration: 0.6, delay: d * 0.1 }}
+                            className="h-1.5 w-1.5 rounded-full bg-cyan-500/50"
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </LayoutGroup>
+            </div>
+
+            {/* Input Area */}
+            <div className="p-6 pt-2">
+              <div className="mb-4 flex flex-wrap gap-2">
+                {promptIds.map((id) => intentMap[id] && (
+                  <button
+                    key={id}
+                    onClick={() => sendMessage(intentMap[id].label)}
+                    className="rounded-full border border-white/5 bg-white/5 px-4 py-2 text-[11px] text-white/50 transition-all hover:border-white/20 hover:bg-white/10 hover:text-white"
+                  >
+                    {intentMap[id].label}
+                  </button>
+                ))}
+              </div>
+
+              <form onSubmit={handleSubmit} className="relative group">
+                <input
+                  type="text"
+                  value={draft}
+                  onChange={(e) => setDraft(e.target.value)}
+                  placeholder="Ask about my tech stack or projects..."
+                  className="w-full rounded-2xl border border-white/10 bg-white/5 px-6 py-4 pr-16 text-sm text-white placeholder:text-white/20 outline-none transition-all focus:border-cyan-500/50 focus:bg-white/[0.08]"
+                />
+                <div className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-2 text-white/30">
                   <button
                     type="button"
-                    onClick={() => setVoiceEnabled((current) => !current)}
-                    aria-label={voiceEnabled ? 'Disable voice' : 'Enable voice'}
-                    className="inline-flex items-center gap-2 rounded-full border border-cyan-300/25 bg-cyan-300/10 px-3 py-2 text-xs font-medium text-cyan-50 transition hover:border-cyan-200/60 hover:bg-cyan-200/15"
+                    onClick={() => setVoiceEnabled(!voiceEnabled)}
+                    className={`flex h-10 w-10 items-center justify-center rounded-xl transition-all ${voiceEnabled ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30' : 'hover:bg-white/10'}`}
                   >
-                    {voiceEnabled ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-                    {voiceEnabled ? 'Voice On' : 'Voice Off'}
+                    {voiceEnabled ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}
                   </button>
-                </div>
-
-                <div
-                  ref={scrollRef}
-                  className="mb-4 h-[20rem] space-y-3 overflow-y-auto rounded-[1.4rem] border border-white/8 bg-[linear-gradient(180deg,rgba(7,10,15,0.95),rgba(3,5,9,0.8))] p-4"
-                >
-                  {messages.map((message) => (
-                    <div
-                      key={message.id}
-                      className={`max-w-[88%] rounded-[1.25rem] px-4 py-3 text-sm leading-7 shadow-[0_10px_25px_rgba(0,0,0,0.18)] ${
-                        message.role === 'user'
-                          ? 'ml-auto border border-cyan-300/20 bg-cyan-300/15 text-cyan-50'
-                          : 'border border-white/8 bg-white/6 text-slate-100'
-                      }`}
-                    >
-                      {message.text}
-                      {message.isTyping ? (
-                        <span className="ml-1 inline-block h-4 w-2 animate-pulse rounded-full bg-cyan-300 align-middle" />
-                      ) : null}
-                    </div>
-                  ))}
-                </div>
-
-                <div className="mb-4 flex flex-wrap gap-2">
-                  {promptOptions.map((prompt) => (
-                    <button
-                      key={prompt.id}
-                      type="button"
-                      onClick={() => handlePromptClick(prompt.id)}
-                      className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-4 py-2 text-sm text-cyan-100 transition hover:-translate-y-0.5 hover:border-cyan-200/60 hover:bg-cyan-200/15"
-                    >
-                      {prompt.label}
-                    </button>
-                  ))}
-                </div>
-
-                <form onSubmit={handleSubmit} className="flex flex-col gap-3 sm:flex-row">
-                  <input
-                    type="text"
-                    value={draft}
-                    onChange={(event) => setDraft(event.target.value)}
-                    placeholder="Ask about projects, skills, or contact..."
-                    className="min-w-0 flex-1 rounded-full border border-white/10 bg-black/55 px-5 py-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-cyan-300/55"
-                  />
                   <button
                     type="submit"
-                    aria-label="Send message"
-                    className="inline-flex items-center justify-center gap-2 rounded-full border border-neon-green/35 bg-neon-green/12 px-5 py-3 text-sm font-medium text-neon-green transition hover:border-neon-green/75 hover:bg-neon-green/18"
+                    className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-500 text-black transition-all hover:scale-110 active:scale-95 shadow-[0_0_20px_rgba(6,182,212,0.4)]"
                   >
-                    Send
-                    <SendHorizonal className="h-4 w-4" />
+                    <SendHorizonal className="h-5 w-5" />
                   </button>
-                </form>
+                </div>
+              </form>
+              
+              <div className="mt-4 flex items-center justify-center gap-6 text-[10px] font-medium uppercase tracking-[0.2em] text-white/20">
+                <span className="flex items-center gap-2"><Terminal className="h-3 w-3" /> v{BOT_CONFIG.version}</span>
+                <span className="flex items-center gap-2"><Activity className="h-3 w-3" /> Optimized</span>
+                <span className="flex items-center gap-2"><Zap className="h-3 w-3" /> Low Latency</span>
               </div>
             </div>
           </motion.section>
-        ) : null}
+        )}
       </AnimatePresence>
     </>
   );

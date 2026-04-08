@@ -1,9 +1,11 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { motion as Motion, useMotionValue, useSpring, AnimatePresence } from 'framer-motion';
 import { useCursor } from '../../context/CursorContext.jsx';
 
 const CustomCursor = () => {
   const { cursorType, setCursorType } = useCursor();
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
+  
   const cursorX = useMotionValue(-100);
   const cursorY = useMotionValue(-100);
   
@@ -12,6 +14,11 @@ const CustomCursor = () => {
   const cursorYSpring = useSpring(cursorY, springConfig);
 
   useEffect(() => {
+    const handleResize = () => setIsDesktop(window.innerWidth >= 1024);
+    window.addEventListener('resize', handleResize);
+
+    if (!isDesktop) return;
+
     const moveCursor = (e) => {
       cursorX.set(e.clientX);
       cursorY.set(e.clientY);
@@ -44,11 +51,14 @@ const CustomCursor = () => {
     window.addEventListener('mouseout', handleMouseOut);
 
     return () => {
+      window.removeEventListener('resize', handleResize);
       window.removeEventListener('mousemove', moveCursor);
       window.removeEventListener('mouseover', handleMouseOver);
       window.removeEventListener('mouseout', handleMouseOut);
     };
-  }, [cursorX, cursorY, cursorType, setCursorType]);
+  }, [cursorX, cursorY, cursorType, setCursorType, isDesktop]);
+
+  if (!isDesktop) return null;
 
   const variants = {
     default: {
