@@ -9,6 +9,7 @@ import Experience from './components/Experience';
 import Projects from './components/Projects';
 import Skills from './components/Skills';
 import Contact from './components/Contact';
+import PortfolioChatbot from './components/chatbot/PortfolioChatbot';
 import Footer from './components/Footer';
 import CustomCursor from './components/ui/CustomCursor';
 import CyberpunkOverlay from './components/ui/CyberpunkOverlay';
@@ -57,6 +58,7 @@ function App() {
             <Experience />
             <Projects />
             <Skills />
+            <PortfolioChatbot />
             <Contact />
           </main>
 

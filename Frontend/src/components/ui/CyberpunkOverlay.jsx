@@ -2,7 +2,7 @@ import React from 'react';
 
 const CyberpunkOverlay = () => {
   return (
-    <div className="fixed inset-0 pointer-events-none z-40 select-none overflow-hidden">
+    <div className="hidden md:block fixed inset-0 pointer-events-none z-40 select-none overflow-hidden">
       {/* Grid Background */}
       <div className="absolute inset-0 bg-[linear-gradient(rgba(0,243,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,243,255,0.03)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_at_center,black_40%,transparent_80%)]" />
 
