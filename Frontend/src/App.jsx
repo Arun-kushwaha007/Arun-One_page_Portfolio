@@ -35,13 +35,30 @@ function App() {
   }, [konamiTriggered]);
 
   useEffect(() => {
-    const { body } = document;
-    const previousOverflow = body.style.overflow;
+    if (!isChatOpen) {
+      return undefined;
+    }
 
-    body.style.overflow = isChatOpen ? 'hidden' : previousOverflow;
+    const { body } = document;
+    const scrollY = window.scrollY;
+    const previousStyles = {
+      overflow: body.style.overflow,
+      position: body.style.position,
+      top: body.style.top,
+      width: body.style.width,
+    };
+
+    body.style.overflow = 'hidden';
+    body.style.position = 'fixed';
+    body.style.top = `-${scrollY}px`;
+    body.style.width = '100%';
 
     return () => {
-      body.style.overflow = previousOverflow;
+      body.style.overflow = previousStyles.overflow;
+      body.style.position = previousStyles.position;
+      body.style.top = previousStyles.top;
+      body.style.width = previousStyles.width;
+      window.scrollTo(0, scrollY);
     };
   }, [isChatOpen]);
 

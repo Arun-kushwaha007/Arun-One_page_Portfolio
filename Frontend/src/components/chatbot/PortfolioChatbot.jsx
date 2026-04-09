@@ -18,6 +18,7 @@ import {
 import { profile } from '../../data/portfolio';
 import { BOT_CONFIG } from './data/ChatbotConfig';
 import { buildKnowledgeBase, resolvePortfolioIntent } from './data/chatbotKnowledge';
+import { selectPreferredVoice } from './data/chatbotVoice';
 
 const TYPING_DELAY_MS = 250;
 const TYPING_SPEED_MS = 14;
@@ -53,6 +54,7 @@ export default function PortfolioChatbot({ isOpen, onOpenChange }) {
   const [voiceEnabled, setVoiceEnabled] = useState(false);
   const [draft, setDraft] = useState('');
   const [isThinking, setIsThinking] = useState(false);
+  const [availableVoices, setAvailableVoices] = useState([]);
 
   const typingIntervalRef = useRef(null);
   const thinkingTimeoutRef = useRef(null);
@@ -87,6 +89,21 @@ export default function PortfolioChatbot({ isOpen, onOpenChange }) {
   }, [isOpen, onOpenChange]);
 
   useEffect(() => {
+    if (!window.speechSynthesis) return undefined;
+
+    const syncVoices = () => {
+      setAvailableVoices(window.speechSynthesis.getVoices());
+    };
+
+    syncVoices();
+    window.speechSynthesis.addEventListener?.('voiceschanged', syncVoices);
+
+    return () => {
+      window.speechSynthesis.removeEventListener?.('voiceschanged', syncVoices);
+    };
+  }, []);
+
+  useEffect(() => {
     return () => {
       if (typingIntervalRef.current) window.clearInterval(typingIntervalRef.current);
       if (thinkingTimeoutRef.current) window.clearTimeout(thinkingTimeoutRef.current);
@@ -98,8 +115,13 @@ export default function PortfolioChatbot({ isOpen, onOpenChange }) {
     if (!voiceEnabled || !window.speechSynthesis || !text) return;
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
+    const selectedVoice = selectPreferredVoice(availableVoices);
+    if (selectedVoice) {
+      utterance.voice = selectedVoice;
+      utterance.lang = selectedVoice.lang;
+    }
     utterance.rate = 1.1;
-    utterance.pitch = 1;
+    utterance.pitch = 0.95;
     window.speechSynthesis.speak(utterance);
   };
 
@@ -220,7 +242,7 @@ export default function PortfolioChatbot({ isOpen, onOpenChange }) {
             initial={{ opacity: 0, y: 40, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 30, scale: 0.98 }}
-            className="fixed inset-x-4 bottom-4 top-4 md:top-auto z-[130] flex flex-col overflow-hidden rounded-[2.5rem] border border-white/10 bg-[#030712]/95 shadow-[0_32px_128px_rgba(0,0,0,0.8)] backdrop-blur-3xl md:inset-auto md:bottom-8 md:right-8 md:h-[720px] md:w-[440px]"
+            className="pointer-events-auto fixed inset-x-4 bottom-4 top-4 z-[130] flex flex-col overflow-hidden rounded-[2.5rem] border border-white/10 bg-[#030712]/95 shadow-[0_32px_128px_rgba(0,0,0,0.8)] backdrop-blur-3xl md:inset-auto md:bottom-8 md:right-8 md:top-8 md:h-[min(78vh,760px)] md:w-[540px] lg:w-[600px]"
           >
             {/* Header Area */}
             <div className="relative border-b border-white/5 bg-gradient-to-b from-white/5 to-transparent p-6 shrink-0">
@@ -275,7 +297,7 @@ export default function PortfolioChatbot({ isOpen, onOpenChange }) {
             {/* Chat Messages */}
             <div 
               ref={scrollRef}
-              className="flex-1 overflow-y-auto p-6 space-y-6 scroll-smooth"
+              className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-6 pr-4 space-y-6 scroll-smooth [touch-action:pan-y]"
             >
               <LayoutGroup>
                 {messages.map((msg) => (
