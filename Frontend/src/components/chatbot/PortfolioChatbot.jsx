@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion, LayoutGroup } from 'framer-motion';
 import { 
-  MessageCircleMore, 
   Mic, 
   MicOff, 
   SendHorizonal, 
@@ -13,13 +12,12 @@ import {
   Cpu,
   Layers,
   Zap,
-  Trash2,
-  ChevronRight,
   ShieldCheck,
   Bot
 } from 'lucide-react';
 import { profile } from '../../data/portfolio';
-import { BOT_CONFIG, INTENTS, QUICK_COMMANDS } from './data/ChatbotConfig';
+import { BOT_CONFIG } from './data/ChatbotConfig';
+import { buildKnowledgeBase, resolvePortfolioIntent } from './data/chatbotKnowledge';
 
 const TYPING_DELAY_MS = 250;
 const TYPING_SPEED_MS = 14;
@@ -34,27 +32,25 @@ function createMessage(role, text, extras = {}) {
   };
 }
 
-export default function PortfolioChatbot() {
-  const intentMap = useMemo(
-    () => Object.fromEntries(INTENTS.map((intent) => [intent.id, intent])),
-    []
-  );
+export default function PortfolioChatbot({ isOpen, onOpenChange }) {
+  const knowledgeBase = useMemo(() => buildKnowledgeBase(), []);
+  const intentMap = knowledgeBase.entriesById;
+  const inputRef = useRef(null);
 
   const welcomeMessage = useMemo(
     () =>
       createMessage(
         'bot',
-        `Initializing System... ${BOT_CONFIG.personality} How can I assist you today?`,
+        `Portfolio assistant online. ${BOT_CONFIG.personality} Ask me anything about Arun's website, or use the quick questions below.`,
         { reaction: 'wave' }
       ),
     []
   );
 
   const [messages, setMessages] = useState([welcomeMessage]);
-  const [promptIds, setPromptIds] = useState(['intro', 'projects', 'stack', 'metrics', 'contact']);
+  const [promptIds, setPromptIds] = useState(knowledgeBase.defaultPromptIds);
   const [reaction, setReaction] = useState('idle');
   const [voiceEnabled, setVoiceEnabled] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
   const [draft, setDraft] = useState('');
   const [isThinking, setIsThinking] = useState(false);
 
@@ -70,6 +66,25 @@ export default function PortfolioChatbot() {
       });
     }
   }, [messages, isThinking]);
+
+  useEffect(() => {
+    if (isOpen) {
+      inputRef.current?.focus();
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
+
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        onOpenChange(false);
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isOpen, onOpenChange]);
 
   useEffect(() => {
     return () => {
@@ -101,25 +116,7 @@ export default function PortfolioChatbot() {
   };
 
   const resolveIntent = (rawText = '') => {
-    const normalized = rawText.trim().toLowerCase();
-    
-    // Check for explicit commands
-    const command = QUICK_COMMANDS.find(q => normalized.includes(q.command));
-    if (command) return intentMap[command.id];
-
-    if (!normalized) return intentMap.fallback;
-
-    const scoredIntent = INTENTS
-      .filter((intent) => intent.id !== 'fallback')
-      .map((intent) => ({
-        intent,
-        score: intent.keywords.reduce((total, keyword) => {
-          return normalized.includes(keyword) ? total + 1 : total;
-        }, 0),
-      }))
-      .sort((left, right) => right.score - left.score)[0];
-
-    return (scoredIntent?.score > 0) ? scoredIntent.intent : intentMap.fallback;
+    return resolvePortfolioIntent(rawText, knowledgeBase);
   };
 
   const typeBotReply = (intent) => {
@@ -132,7 +129,7 @@ export default function PortfolioChatbot() {
       
       if (intent.action === 'CLEAR_CHAT') {
         setMessages([welcomeMessage]);
-        setPromptIds(['intro', 'projects', 'stack']);
+        setPromptIds(knowledgeBase.defaultPromptIds);
         setReaction('idle');
         return;
       }
@@ -193,7 +190,7 @@ export default function PortfolioChatbot() {
       {/* Floating Trigger Button */}
       <motion.button
         type="button"
-        onClick={() => setIsOpen(true)}
+        onClick={() => onOpenChange(true)}
         whileHover={{ scale: 1.05, y: -2 }}
         whileTap={{ scale: 0.95 }}
         className={`fixed bottom-6 right-6 z-[120] flex items-center gap-4 rounded-3xl border p-2 shadow-2xl backdrop-blur-2xl transition-all duration-500 md:bottom-8 md:right-8 ${
@@ -211,8 +208,8 @@ export default function PortfolioChatbot() {
           />
         </div>
         <div className="pr-6 text-left">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-400">Arun Avatar</p>
-          <p className="text-sm font-medium text-white/90">Systems AI Online</p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-400">Arun Assistant</p>
+          <p className="text-sm font-medium text-white/90">Website Q and A</p>
         </div>
       </motion.button>
 
@@ -239,7 +236,7 @@ export default function PortfolioChatbot() {
                   </motion.div>
                   <div>
                     <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                      Arun&apos;s Avatar
+                      Arun&apos;s Portfolio Bot
                       <ShieldCheck className="h-4 w-4 text-cyan-400" />
                     </h2>
                     <div className="flex items-center gap-3 mt-1">
@@ -254,7 +251,7 @@ export default function PortfolioChatbot() {
                   </div>
                 </div>
                 <button 
-                  onClick={() => setIsOpen(false)}
+                  onClick={() => onOpenChange(false)}
                   className="group flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/50 transition-all hover:bg-white/10 hover:text-white"
                 >
                   <X className="h-5 w-5 transition-transform group-hover:rotate-90" />
@@ -263,7 +260,7 @@ export default function PortfolioChatbot() {
 
               {/* Status Bar */}
               <div className="mt-6 flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
-                {QUICK_COMMANDS.map((cmd) => (
+                {knowledgeBase.quickCommands.map((cmd) => (
                   <button
                     key={cmd.id}
                     onClick={() => handleCommandClick(cmd)}
@@ -297,7 +294,7 @@ export default function PortfolioChatbot() {
                       {msg.role === 'bot' && (
                         <div className="absolute -left-10 top-0 hidden md:block">
                           <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/5 bg-white/5">
-                            {msg.reaction === 'cpu' ? <Cpu className="h-4 w-4 text-cyan-400" /> : 
+                            {msg.reaction === 'cpu' ? <Cpu className="h-4 w-4 text-cyan-400" /> :
                              msg.reaction === 'project-mode' ? <Layers className="h-4 w-4 text-green-400" /> :
                              <Sparkles className="h-4 w-4 text-blue-400" />}
                           </div>
@@ -362,10 +359,11 @@ export default function PortfolioChatbot() {
 
               <form onSubmit={handleSubmit} className="relative group">
                 <input
+                  ref={inputRef}
                   type="text"
                   value={draft}
                   onChange={(e) => setDraft(e.target.value)}
-                  placeholder="Ask about my tech stack or projects..."
+                  placeholder="Ask about projects, experience, skills, or contact info..."
                   className="w-full rounded-2xl border border-white/10 bg-white/5 px-6 py-4 pr-16 text-sm text-white placeholder:text-white/20 outline-none transition-all focus:border-cyan-500/50 focus:bg-white/[0.08]"
                 />
                 <div className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-2 text-white/30">
