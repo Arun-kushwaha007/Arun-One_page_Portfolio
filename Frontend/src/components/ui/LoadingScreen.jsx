@@ -6,7 +6,6 @@ const LoadingScreen = ({ onComplete }) => {
   const [phase, setPhase] = useState('loading'); // 'loading' | 'revealing' | 'done'
   const rafRef = useRef(null);
   const startTimeRef = useRef(null);
-  const videoRef = useRef(null);
 
   const LOAD_DURATION = 3200; // ms
   const REVEAL_DELAY = 400;
@@ -36,13 +35,6 @@ const LoadingScreen = ({ onComplete }) => {
     };
   }, []);
 
-  // Accelerate video playback as progress increases (0.5x → 4x)
-  useEffect(() => {
-    if (videoRef.current) {
-      const speed = 0.5 + (progress / 100) * 3.5;
-      videoRef.current.playbackRate = Math.min(speed, 4);
-    }
-  }, [progress]);
 
   // SVG circle params
   const radius = 62;
@@ -56,22 +48,25 @@ const LoadingScreen = ({ onComplete }) => {
       exit={{ opacity: 0 }}
       transition={{ duration: 0.8, ease: 'easeInOut' }}
     >
-      {/* Background Video */}
-      <video
-        ref={videoRef}
-        autoPlay
-        loop
-        muted
-        playsInline
+      {/* Background GIF with Dynamic Energy Effects */}
+      <motion.img
         className="absolute inset-0 w-full h-full object-cover"
-        src="/assets/loader-video.mp4"
+        src="/assets/loader-video.gif"
+        alt="Loading background"
+        style={{
+          filter: `brightness(${0.8 + (progress / 100) * 0.5}) contrast(${1 + (progress / 100) * 0.3})`,
+          scale: 1 + (progress / 100) * 0.1,
+          x: progress > 50 ? (Math.random() - 0.5) * (progress - 50) * 0.1 : 0,
+          y: progress > 50 ? (Math.random() - 0.5) * (progress - 50) * 0.1 : 0,
+        }}
+        transition={{ type: 'spring', stiffness: 1000, damping: 10 }}
       />
 
-      {/* Vignette overlay — darkens center for UI readability */}
+      {/* Optimized Vignette overlay — lighter center for vibrancy */}
       <div
         className="absolute inset-0"
         style={{
-          background: 'radial-gradient(circle at center, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.35) 25%, rgba(0,0,0,0.15) 45%, rgba(0,0,0,0.6) 100%)',
+          background: 'radial-gradient(circle at center, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.2) 25%, rgba(0,0,0,0.1) 45%, rgba(0,0,0,0.7) 100%)',
         }}
       />
 
