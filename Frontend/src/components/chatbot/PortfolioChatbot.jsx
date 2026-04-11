@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { AnimatePresence, motion, LayoutGroup } from 'framer-motion';
 import { 
   Mic, 
@@ -22,6 +22,28 @@ import { selectPreferredVoice } from './data/chatbotVoice';
 
 const TYPING_DELAY_MS = 250;
 const TYPING_SPEED_MS = 14;
+
+// Shared image cache loaded once and kept in memory
+const avatarCache = { images: [], loaded: false };
+
+function loadAvatarImages() {
+  if (avatarCache.loaded) return Promise.resolve(avatarCache.images);
+  
+  const promises = Array.from({ length: 50 }, (_, i) => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.src = `/assets/avatar-chat-bot/${String(i + 1).padStart(2, '0')} - Edited.png`;
+      img.onload = () => resolve(img);
+      img.onerror = () => resolve(null);
+    });
+  });
+
+  return Promise.all(promises).then((results) => {
+    avatarCache.images = results.filter(img => img !== null);
+    avatarCache.loaded = true;
+    return avatarCache.images;
+  });
+}
 
 function createMessage(role, text, extras = {}) {
   return {
@@ -59,6 +81,66 @@ export default function PortfolioChatbot({ isOpen, onOpenChange }) {
   const typingIntervalRef = useRef(null);
   const thinkingTimeoutRef = useRef(null);
   const scrollRef = useRef(null);
+  const canvasRef = useRef(null);
+  const frameRef = useRef(0);
+  const [isReady, setIsReady] = useState(false);
+
+  const isBotSpeaking = useMemo(() => isThinking || messages.some((m) => m.isTyping), [isThinking, messages]);
+
+  const drawFrame = useCallback((index) => {
+    const canvas = canvasRef.current;
+    if (!canvas || !avatarCache.images[index]) return;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(avatarCache.images[index], 0, 0, canvas.width, canvas.height);
+  }, []);
+
+  // Preload frames once
+  useEffect(() => {
+    loadAvatarImages().then(() => {
+      setIsReady(true);
+      drawFrame(0);
+    });
+  }, [drawFrame]);
+
+  // Reset animation when opening
+  useEffect(() => {
+    if (isOpen) {
+      frameRef.current = 0;
+      if (isReady) drawFrame(0);
+    }
+  }, [isOpen, isReady, drawFrame]);
+
+  // Frame animation loop
+  useEffect(() => {
+    if (!isReady) return undefined;
+
+    const interval = setInterval(() => {
+      // Logic for frame range
+      let nextFrame = frameRef.current;
+      if (isBotSpeaking) {
+        // Loop speaking frames: 31 to 50 (indices 30 to 49)
+        if (nextFrame < 30 || nextFrame >= 49) {
+          nextFrame = 30;
+        } else {
+          nextFrame += 1;
+        }
+      } else {
+        // Idle logic: Play frames 1-40 (indices 0-39) once, then hold at 40
+        if (nextFrame < 39) {
+          nextFrame += 1;
+        } else {
+          // Stay at frame 40 (index 39) if not speaking
+          nextFrame = 39;
+        }
+      }
+      
+      frameRef.current = nextFrame;
+      drawFrame(nextFrame);
+    }, 120);
+
+    return () => clearInterval(interval);
+  }, [isReady, isBotSpeaking, drawFrame]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -207,6 +289,7 @@ export default function PortfolioChatbot({ isOpen, onOpenChange }) {
     sendMessage(nextDraft);
   };
 
+
   return (
     <>
       {/* Floating Trigger Button */}
@@ -235,183 +318,194 @@ export default function PortfolioChatbot({ isOpen, onOpenChange }) {
         </div>
       </motion.button>
 
-      {/* Main Chat Panel */}
+      {/* Main Chat Overlay */}
       <AnimatePresence>
         {isOpen && (
-          <motion.section
-            initial={{ opacity: 0, y: 40, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 30, scale: 0.98 }}
-            className="pointer-events-auto fixed inset-x-4 bottom-4 top-4 z-[130] flex flex-col overflow-hidden rounded-[2.5rem] border border-white/10 bg-[#030712]/95 shadow-[0_32px_128px_rgba(0,0,0,0.8)] backdrop-blur-3xl md:inset-auto md:bottom-8 md:right-8 md:top-8 md:h-[min(78vh,760px)] md:w-[540px] lg:w-[600px]"
-          >
-            {/* Header Area */}
-            <div className="relative border-b border-white/5 bg-gradient-to-b from-white/5 to-transparent p-6 shrink-0">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <motion.div 
-                    animate={reaction !== 'idle' ? { scale: [1, 1.05, 1], rotate: [0, 2, -2, 0] } : {}}
-                    transition={{ duration: 0.5, repeat: reaction !== 'idle' ? Infinity : 0 }}
-                    className="relative"
-                  >
-                    <div className="absolute -inset-1 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 blur-sm opacity-50" />
-                    <img src={profile.image} alt="Arun" className="relative h-14 w-14 rounded-2xl border border-white/20 object-cover" />
-                  </motion.div>
-                  <div>
-                    <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                      Arun&apos;s Portfolio Bot
-                      <ShieldCheck className="h-4 w-4 text-cyan-400" />
-                    </h2>
-                    <div className="flex items-center gap-3 mt-1">
-                      <span className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider text-green-400">
-                        <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
-                        {BOT_CONFIG.status}
-                      </span>
-                      <span className="text-[10px] text-white/30 truncate max-w-[120px]">
-                        Latency: {BOT_CONFIG.load}
-                      </span>
+          <div className="fixed inset-0 z-[130] flex items-center justify-center p-4">
+            {/* Backdrop Blur */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => onOpenChange(false)}
+              className="absolute inset-0 bg-black/40 backdrop-blur-md"
+            />
+
+            {/* Modal Container */}
+            <motion.section
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="liquid-glass relative flex h-[700px] w-full max-w-5xl overflow-hidden rounded-[2rem] border-cyan-500/20 text-white shadow-[0_0_50px_rgba(6,182,212,0.15)]"
+            >
+              {/* Left Column: Chat Interface */}
+              <div className="relative flex h-full w-full flex-col border-r border-white/5 md:w-[45%] lg:w-[40%] bg-black/40">
+                {/* Header */}
+                <div className="p-8 pb-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h1 className="text-2xl font-bold tracking-tight text-white/90">Curator AI</h1>
+                      <p className="text-[10px] font-medium tracking-[0.15em] text-cyan-400/60 uppercase mt-1">
+                        NEURAL_LINK_ACTIVE
+                      </p>
                     </div>
+                    <button 
+                      onClick={() => onOpenChange(false)}
+                      className="group flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/50 transition-all hover:bg-white/10 hover:text-white"
+                    >
+                      <X className="h-5 w-5 transition-transform group-hover:rotate-90" />
+                    </button>
                   </div>
                 </div>
-                <button 
-                  onClick={() => onOpenChange(false)}
-                  className="group flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/50 transition-all hover:bg-white/10 hover:text-white"
+
+                {/* Chat Messages */}
+                <div 
+                  ref={scrollRef}
+                  className="flex-1 overflow-y-auto overscroll-contain p-8 space-y-8 no-scrollbar"
                 >
-                  <X className="h-5 w-5 transition-transform group-hover:rotate-90" />
-                </button>
-              </div>
+                  {messages.map((msg) => (
+                    <motion.div
+                      layout
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      key={msg.id}
+                      className="flex flex-col gap-3"
+                    >
+                      <div className={`flex items-center gap-2 text-[10px] font-bold tracking-[0.2em] uppercase ${
+                        msg.role === 'user' ? 'justify-end text-white/40' : 'text-cyan-500/60'
+                      }`}>
+                        {msg.role === 'bot' && <Activity className="h-3 w-3 animate-pulse" />}
+                        {msg.role === 'user' ? 'USER' : 'CURATOR'}
+                      </div>
 
-              {/* Status Bar */}
-              <div className="mt-6 flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
-                {knowledgeBase.quickCommands.map((cmd) => (
-                  <button
-                    key={cmd.id}
-                    onClick={() => handleCommandClick(cmd)}
-                    className="flex shrink-0 items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[11px] font-medium text-white/70 transition-all hover:border-cyan-500/50 hover:bg-cyan-500/10 hover:text-cyan-400"
-                  >
-                    {cmd.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Chat Messages */}
-            <div 
-              ref={scrollRef}
-              className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-6 pr-4 space-y-6 scroll-smooth [touch-action:pan-y]"
-            >
-              <LayoutGroup>
-                {messages.map((msg) => (
-                  <motion.div
-                    layout
-                    initial={{ opacity: 0, x: msg.role === 'user' ? 20 : -20, y: 10 }}
-                    animate={{ opacity: 1, x: 0, y: 0 }}
-                    key={msg.id}
-                    className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                  >
-                    <div className={`group relative max-w-[85%] rounded-[1.5rem] p-4 text-sm leading-relaxed shadow-xl border ${
-                      msg.role === 'user' 
-                        ? 'border-cyan-500/30 bg-gradient-to-br from-cyan-600/20 to-blue-700/20 text-white rounded-tr-none' 
-                        : 'border-white/10 bg-white/5 text-white/90 rounded-tl-none font-light'
-                    }`}>
-                      {msg.role === 'bot' && (
-                        <div className="absolute -left-10 top-0 hidden md:block">
-                          <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/5 bg-white/5">
-                            {msg.reaction === 'cpu' ? <Cpu className="h-4 w-4 text-cyan-400" /> :
-                             msg.reaction === 'project-mode' ? <Layers className="h-4 w-4 text-green-400" /> :
-                             <Sparkles className="h-4 w-4 text-blue-400" />}
-                          </div>
+                      <div className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                        <div className={`max-w-[90%] text-sm leading-relaxed p-4 rounded-2xl border ${
+                          msg.role === 'user' 
+                            ? 'bg-blue-600/10 border-blue-500/30 text-white/80 rounded-tr-none' 
+                            : 'bg-white/5 border-white/10 text-white/70 rounded-tl-none font-light'
+                        }`}>
+                          {msg.text}
+                          {msg.isTyping && (
+                            <motion.span 
+                              animate={{ opacity: [0, 1, 0] }}
+                              transition={{ repeat: Infinity, duration: 0.8 }}
+                              className="ml-1 inline-block h-4 w-1.5 rounded-full bg-cyan-400 align-middle"
+                            />
+                          )}
                         </div>
-                      )}
-                      
-                      <div className="whitespace-pre-wrap">
-                        {msg.text}
-                        {msg.isTyping && (
-                          <motion.span 
-                            animate={{ opacity: [0, 1, 0] }}
-                            transition={{ repeat: Infinity, duration: 0.8 }}
-                            className="ml-1 inline-block h-4 w-1.5 rounded-full bg-cyan-400 align-middle"
-                          />
-                        )}
                       </div>
-                      
-                      <div className={`mt-2 flex items-center gap-2 text-[10px] ${msg.role === 'user' ? 'text-cyan-300/50' : 'text-white/30'}`}>
-                        {msg.timestamp}
-                        {msg.isCommand && <Command className="h-2.5 w-2.5" />}
+                    </motion.div>
+                  ))}
+
+                  {isThinking && (
+                    <div className="flex flex-col gap-3">
+                      <div className="text-[10px] font-bold tracking-[0.2em] uppercase text-cyan-500/60 flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-cyan-500 animate-ping" />
+                        ANALYZING...
                       </div>
-                    </div>
-                  </motion.div>
-                ))}
-                
-                {isThinking && (
-                  <motion.div 
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className="flex justify-start"
-                  >
-                    <div className="rounded-2xl border border-white/5 bg-white/5 p-4">
                       <div className="flex gap-1.5">
                         {[0, 1, 2].map((d) => (
                           <motion.div
                             key={d}
-                            animate={{ y: [0, -4, 0] }}
+                            animate={{ opacity: [0.2, 1, 0.2] }}
                             transition={{ repeat: Infinity, duration: 0.6, delay: d * 0.1 }}
-                            className="h-1.5 w-1.5 rounded-full bg-cyan-500/50"
+                            className="h-1 w-6 rounded-full bg-cyan-500/30"
                           />
                         ))}
                       </div>
                     </div>
-                  </motion.div>
-                )}
-              </LayoutGroup>
-            </div>
-
-            {/* Input Area */}
-            <div className="p-6 pt-2">
-              <div className="mb-4 flex flex-wrap gap-2">
-                {promptIds.map((id) => intentMap[id] && (
-                  <button
-                    key={id}
-                    onClick={() => sendMessage(intentMap[id].label)}
-                    className="rounded-full border border-white/5 bg-white/5 px-4 py-2 text-[11px] text-white/50 transition-all hover:border-white/20 hover:bg-white/10 hover:text-white"
-                  >
-                    {intentMap[id].label}
-                  </button>
-                ))}
-              </div>
-
-              <form onSubmit={handleSubmit} className="relative group">
-                <input
-                  ref={inputRef}
-                  type="text"
-                  value={draft}
-                  onChange={(e) => setDraft(e.target.value)}
-                  placeholder="Ask about projects, experience, skills, or contact info..."
-                  className="w-full rounded-2xl border border-white/10 bg-white/5 px-6 py-4 pr-16 text-sm text-white placeholder:text-white/20 outline-none transition-all focus:border-cyan-500/50 focus:bg-white/[0.08]"
-                />
-                <div className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-2 text-white/30">
-                  <button
-                    type="button"
-                    onClick={() => setVoiceEnabled(!voiceEnabled)}
-                    className={`flex h-10 w-10 items-center justify-center rounded-xl transition-all ${voiceEnabled ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30' : 'hover:bg-white/10'}`}
-                  >
-                    {voiceEnabled ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}
-                  </button>
-                  <button
-                    type="submit"
-                    className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-500 text-black transition-all hover:scale-110 active:scale-95 shadow-[0_0_20px_rgba(6,182,212,0.4)]"
-                  >
-                    <SendHorizonal className="h-5 w-5" />
-                  </button>
+                  )}
                 </div>
-              </form>
-              
-              <div className="mt-4 flex items-center justify-center gap-6 text-[10px] font-medium uppercase tracking-[0.2em] text-white/20">
-                <span className="flex items-center gap-2"><Terminal className="h-3 w-3" /> v{BOT_CONFIG.version}</span>
-                <span className="flex items-center gap-2"><Activity className="h-3 w-3" /> Optimized</span>
-                <span className="flex items-center gap-2"><Zap className="h-3 w-3" /> Low Latency</span>
+
+                {/* Footer Actions */}
+                <div className="p-8 pt-0 space-y-6">
+                  <div className="flex flex-wrap gap-2">
+                    {knowledgeBase.quickCommands.slice(0, 3).map((cmd) => (
+                      <button
+                        key={cmd.id}
+                        onClick={() => handleCommandClick(cmd)}
+                        className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-[10px] font-medium tracking-wider text-white/50 transition-all hover:border-cyan-500/30 hover:bg-cyan-500/10 hover:text-cyan-400"
+                      >
+                        {cmd.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  <form onSubmit={handleSubmit} className="relative group">
+                    <input
+                      ref={inputRef}
+                      type="text"
+                      value={draft}
+                      onChange={(e) => setDraft(e.target.value)}
+                      placeholder="Inquire further..."
+                      className="w-full rounded-xl border border-white/10 bg-white/5 px-6 py-4 text-sm text-white placeholder:text-white/20 outline-none transition-all focus:border-cyan-500/50"
+                    />
+                    <div className="absolute right-4 top-1/2 flex -translate-y-1/2 items-center gap-3">
+                       <button
+                          type="button"
+                          onClick={() => setVoiceEnabled(!voiceEnabled)}
+                          className={`flex h-8 w-8 items-center justify-center rounded-lg transition-all ${voiceEnabled ? 'text-cyan-400' : 'text-white/20'}`}
+                        >
+                          {voiceEnabled ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
+                        </button>
+                        <button
+                          type="submit"
+                          className="flex h-8 w-8 items-center justify-center text-white/40 hover:text-cyan-400 transition-colors"
+                        >
+                          <SendHorizonal className="h-5 w-5" />
+                        </button>
+                    </div>
+                  </form>
+                </div>
               </div>
-            </div>
-          </motion.section>
+
+              {/* Right Column: Speaking Character */}
+              <div className="relative hidden flex-1 h-full md:block bg-black">
+                {/* Reactive Canvas Avatar Area */}
+                <div className="absolute inset-0 overflow-hidden">
+                  <canvas
+                    ref={canvasRef}
+                    width={1200}
+                    height={1200}
+                    className="h-full w-full object-cover opacity-80 mix-blend-screen brightness-125 transition-opacity duration-500"
+                    style={{ opacity: isReady ? 0.8 : 0 }}
+                  />
+                  {/* Digital Overlays */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/40" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-black via-transparent to-transparent" />
+                  
+                  {/* Status Markers */}
+                  <div className="absolute right-8 top-8 flex flex-col items-end gap-2">
+                    <div className="flex items-center gap-3 rounded-full border border-white/10 bg-black/40 px-4 py-1.5 backdrop-blur-md">
+                       <div className={`h-2 w-2 rounded-full ${isThinking || messages.some(m => m.isTyping) ? 'bg-cyan-400 animate-pulse shadow-[0_0_10px_#22d3ee]' : 'bg-white/20'}`} />
+                       <span className="text-[10px] font-bold tracking-[0.2em] text-white/80 uppercase">
+                         {isThinking || messages.some(m => m.isTyping) ? 'STREAMING' : 'IDLE'}
+                       </span>
+                    </div>
+                    <div className="text-[9px] font-mono text-white/20 uppercase tracking-widest">
+                      BUFF_LATENCY: 12ms
+                    </div>
+                  </div>
+
+                  {/* Character Meta */}
+                  <div className="absolute bottom-12 left-12 space-y-4">
+                    <div className="h-px w-24 bg-cyan-500/50" />
+                    <div>
+                      <p className="text-[10px] font-bold tracking-[0.3em] text-cyan-400 uppercase">SYNTHETIC_AVATAR_01</p>
+                      <h2 className="text-5xl font-bold tracking-tighter text-white/90 mt-2">ARUN_BOT</h2>
+                    </div>
+                    <p className="max-w-xs text-xs font-light leading-relaxed text-white/40 italic">
+                      "I am a digital extension of Arun's technical expertise, ready to converse on systems and design."
+                    </p>
+                  </div>
+                </div>
+
+                {/* Decorative Tech Elements */}
+                <div className="absolute inset-0 pointer-events-none opacity-20 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:32px_32px]" />
+                <div className="absolute top-0 bottom-0 left-0 w-px bg-gradient-to-b from-transparent via-cyan-500/20 to-transparent" />
+              </div>
+            </motion.section>
+          </div>
         )}
       </AnimatePresence>
     </>
