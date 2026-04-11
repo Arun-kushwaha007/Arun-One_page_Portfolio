@@ -318,7 +318,7 @@ export default function PortfolioChatbot({ isOpen, onOpenChange }) {
         onClick={() => onOpenChange(true)}
         whileHover={{ scale: 1.05, y: -2 }}
         whileTap={{ scale: 0.95 }}
-        className={`fixed bottom-6 right-6 z-[120] flex items-center gap-4 rounded-3xl border p-2 shadow-2xl backdrop-blur-2xl transition-all duration-500 md:bottom-8 md:right-8 ${
+        className={`fixed bottom-6 right-6 z-[120] hidden items-center gap-4 rounded-3xl border p-2 shadow-2xl backdrop-blur-2xl transition-all duration-500 md:bottom-8 md:right-8 md:flex ${
           isOpen
             ? 'pointer-events-none translate-y-12 opacity-0'
             : 'border-cyan-500/30 bg-black/60 text-white'
@@ -338,7 +338,7 @@ export default function PortfolioChatbot({ isOpen, onOpenChange }) {
       {/* Main Chat Overlay */}
       <AnimatePresence>
         {isOpen && (
-          <div className="fixed inset-0 z-[130] flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[130] hidden items-center justify-center md:flex">
             {/* Backdrop Blur */}
             <motion.div
               initial={{ opacity: 0 }}
