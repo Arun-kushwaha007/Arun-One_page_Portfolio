@@ -13,13 +13,18 @@ function scoreVoice(voice) {
   else if (lang.startsWith('en-us')) score += 80;
   else if (lang.startsWith('en')) score += 60;
 
+  // New: Prioritize high-quality "Neural" or "Natural" voices
+  if (name.includes('neural')) score += 200;
+  if (name.includes('natural')) score += 180;
+  if (name.includes('online')) score += 100;
+
   if (name.includes('female')) score += 40;
   if (name.includes('zira')) score += 28;
   if (name.includes('aria')) score += 26;
   if (name.includes('sonia')) score += 24;
   if (name.includes('heera')) score += 24;
-  if (name.includes('google')) score += 20;
-  if (name.includes('microsoft')) score += 16;
+  if (name.includes('google')) score += 40; // Boosted
+  if (name.includes('microsoft')) score += 30; // Boosted
   if (voice?.localService) score += 8;
   if (voice?.default) score += 6;
 

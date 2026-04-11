@@ -77,6 +77,7 @@ export default function PortfolioChatbot({ isOpen, onOpenChange }) {
   const [draft, setDraft] = useState('');
   const [isThinking, setIsThinking] = useState(false);
   const [availableVoices, setAvailableVoices] = useState([]);
+  const [isClosing, setIsClosing] = useState(false);
 
   const typingIntervalRef = useRef(null);
   const thinkingTimeoutRef = useRef(null);
@@ -86,6 +87,15 @@ export default function PortfolioChatbot({ isOpen, onOpenChange }) {
   const [isReady, setIsReady] = useState(false);
 
   const isBotSpeaking = useMemo(() => isThinking || messages.some((m) => m.isTyping), [isThinking, messages]);
+
+  const handleClose = useCallback(() => {
+    if (isClosing) return;
+    setIsClosing(true);
+    // Force frame to 30 if we're deeper in the loop, to start the reverse sequence
+    if (frameRef.current > 29) {
+      frameRef.current = 29;
+    }
+  }, [isClosing]);
 
   const drawFrame = useCallback((index) => {
     const canvas = canvasRef.current;
@@ -107,6 +117,7 @@ export default function PortfolioChatbot({ isOpen, onOpenChange }) {
   useEffect(() => {
     if (isOpen) {
       frameRef.current = 0;
+      setIsClosing(false);
       if (isReady) drawFrame(0);
     }
   }, [isOpen, isReady, drawFrame]);
@@ -116,9 +127,19 @@ export default function PortfolioChatbot({ isOpen, onOpenChange }) {
     if (!isReady) return undefined;
 
     const interval = setInterval(() => {
-      // Logic for frame range
       let nextFrame = frameRef.current;
-      if (isBotSpeaking) {
+
+      if (isClosing) {
+        // Shutdown logic: Reverse frames 30 -> 1 (indices 29 -> 0)
+        if (nextFrame > 0) {
+          nextFrame -= 1;
+        } else {
+          // Animation finished, actually close the modal
+          onOpenChange(false);
+          clearInterval(interval);
+          return;
+        }
+      } else if (isBotSpeaking) {
         // Loop speaking frames: 31 to 50 (indices 30 to 49)
         if (nextFrame < 30 || nextFrame >= 49) {
           nextFrame = 30;
@@ -130,17 +151,16 @@ export default function PortfolioChatbot({ isOpen, onOpenChange }) {
         if (nextFrame < 39) {
           nextFrame += 1;
         } else {
-          // Stay at frame 40 (index 39) if not speaking
           nextFrame = 39;
         }
       }
       
       frameRef.current = nextFrame;
       drawFrame(nextFrame);
-    }, 120);
+    }, isClosing ? 50 : 120); // Play faster when closing for the "flash" effect
 
     return () => clearInterval(interval);
-  }, [isReady, isBotSpeaking, drawFrame]);
+  }, [isReady, isBotSpeaking, isClosing, drawFrame, onOpenChange]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -162,13 +182,13 @@ export default function PortfolioChatbot({ isOpen, onOpenChange }) {
 
     const onKeyDown = (event) => {
       if (event.key === 'Escape') {
-        onOpenChange(false);
+        handleClose();
       }
     };
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [isOpen, onOpenChange]);
+  }, [isOpen, handleClose]);
 
   useEffect(() => {
     if (!window.speechSynthesis) return undefined;
@@ -322,35 +342,40 @@ export default function PortfolioChatbot({ isOpen, onOpenChange }) {
             {/* Backdrop Blur */}
             <motion.div
               initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
+              animate={{ opacity: isClosing ? 0 : 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => onOpenChange(false)}
+              onClick={handleClose}
               className="absolute inset-0 bg-black/40 backdrop-blur-md"
             />
 
-            {/* Modal Container */}
+            {/* Full Screen Modal Container */}
             <motion.section
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="liquid-glass relative flex h-[700px] w-full max-w-5xl overflow-hidden rounded-[2rem] border-cyan-500/20 text-white shadow-[0_0_50px_rgba(6,182,212,0.15)]"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: isClosing ? 0.4 : 1 }}
+              exit={{ opacity: 0 }}
+              className="relative flex h-full w-full overflow-hidden text-white"
             >
-              {/* Left Column: Chat Interface */}
-              <div className="relative flex h-full w-full flex-col border-r border-white/5 md:w-[45%] lg:w-[40%] bg-black/40">
+              {/* Left Column: Chat Interface (60%) */}
+              <motion.div 
+                animate={{ 
+                  x: isClosing ? -100 : 0,
+                  opacity: isClosing ? 0 : 1 
+                }}
+                transition={{ duration: 0.5, ease: "easeIn" }}
+                className="relative flex h-full w-full flex-col border-r border-white/5 md:w-[60%] bg-black/60 backdrop-blur-3xl"
+              >
                 {/* Header */}
-                <div className="p-8 pb-4">
+                <div className="p-8 md:p-12 pb-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h1 className="text-2xl font-bold tracking-tight text-white/90">Curator AI</h1>
-                      <p className="text-[10px] font-medium tracking-[0.15em] text-cyan-400/60 uppercase mt-1">
-                        NEURAL_LINK_ACTIVE
-                      </p>
+                      <h1 className="text-3xl font-bold tracking-tight text-white/90">Curator AI</h1>
+                      <p className="text-[10px] mt-1 font-bold tracking-[0.3em] text-cyan-500/60 uppercase">Advanced Portfolio Assistant</p>
                     </div>
                     <button 
-                      onClick={() => onOpenChange(false)}
-                      className="group flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/50 transition-all hover:bg-white/10 hover:text-white"
+                      onClick={handleClose}
+                      className="group flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/50 transition-all hover:bg-white/10 hover:text-white"
                     >
-                      <X className="h-5 w-5 transition-transform group-hover:rotate-90" />
+                      <X className="h-6 w-6 transition-transform group-hover:rotate-90" />
                     </button>
                   </div>
                 </div>
@@ -358,7 +383,7 @@ export default function PortfolioChatbot({ isOpen, onOpenChange }) {
                 {/* Chat Messages */}
                 <div 
                   ref={scrollRef}
-                  className="flex-1 overflow-y-auto overscroll-contain p-8 space-y-8 no-scrollbar"
+                  className="flex-1 overflow-y-auto overscroll-contain p-8 md:p-12 space-y-10 no-scrollbar"
                 >
                   {messages.map((msg) => (
                     <motion.div
@@ -366,20 +391,20 @@ export default function PortfolioChatbot({ isOpen, onOpenChange }) {
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       key={msg.id}
-                      className="flex flex-col gap-3"
+                      className="flex flex-col gap-4"
                     >
-                      <div className={`flex items-center gap-2 text-[10px] font-bold tracking-[0.2em] uppercase ${
+                      <div className={`flex items-center gap-3 text-[10px] font-bold tracking-[0.25em] uppercase ${
                         msg.role === 'user' ? 'justify-end text-white/40' : 'text-cyan-500/60'
                       }`}>
                         {msg.role === 'bot' && <Activity className="h-3 w-3 animate-pulse" />}
-                        {msg.role === 'user' ? 'USER' : 'CURATOR'}
+                        {msg.role === 'user' ? 'ACCESS_REQUEST' : 'CORE_INTERFACE'}
                       </div>
 
                       <div className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                        <div className={`max-w-[90%] text-sm leading-relaxed p-4 rounded-2xl border ${
+                        <div className={`max-w-[85%] text-base leading-relaxed p-6 rounded-2xl border ${
                           msg.role === 'user' 
-                            ? 'bg-blue-600/10 border-blue-500/30 text-white/80 rounded-tr-none' 
-                            : 'bg-white/5 border-white/10 text-white/70 rounded-tl-none font-light'
+                            ? 'bg-blue-600/10 border-blue-500/20 text-white/80 rounded-tr-none' 
+                            : 'bg-white/5 border-white/5 text-white/70 rounded-tl-none font-light'
                         }`}>
                           {msg.text}
                           {msg.isTyping && (
@@ -395,18 +420,18 @@ export default function PortfolioChatbot({ isOpen, onOpenChange }) {
                   ))}
 
                   {isThinking && (
-                    <div className="flex flex-col gap-3">
-                      <div className="text-[10px] font-bold tracking-[0.2em] uppercase text-cyan-500/60 flex items-center gap-2">
+                    <div className="flex flex-col gap-4">
+                      <div className="text-[10px] font-bold tracking-[0.25em] uppercase text-cyan-500/60 flex items-center gap-3">
                         <span className="h-2 w-2 rounded-full bg-cyan-500 animate-ping" />
-                        ANALYZING...
+                        PROCESSING_DATA...
                       </div>
-                      <div className="flex gap-1.5">
+                      <div className="flex gap-2">
                         {[0, 1, 2].map((d) => (
                           <motion.div
                             key={d}
                             animate={{ opacity: [0.2, 1, 0.2] }}
                             transition={{ repeat: Infinity, duration: 0.6, delay: d * 0.1 }}
-                            className="h-1 w-6 rounded-full bg-cyan-500/30"
+                            className="h-1 w-12 rounded-full bg-cyan-500/20"
                           />
                         ))}
                       </div>
@@ -415,13 +440,13 @@ export default function PortfolioChatbot({ isOpen, onOpenChange }) {
                 </div>
 
                 {/* Footer Actions */}
-                <div className="p-8 pt-0 space-y-6">
-                  <div className="flex flex-wrap gap-2">
-                    {knowledgeBase.quickCommands.slice(0, 3).map((cmd) => (
+                <div className="p-8 md:p-12 pt-0 space-y-8">
+                  <div className="flex flex-wrap gap-3">
+                    {knowledgeBase.quickCommands.slice(0, 4).map((cmd) => (
                       <button
                         key={cmd.id}
                         onClick={() => handleCommandClick(cmd)}
-                        className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-[10px] font-medium tracking-wider text-white/50 transition-all hover:border-cyan-500/30 hover:bg-cyan-500/10 hover:text-cyan-400"
+                        className="rounded-full border border-white/10 bg-white/5 px-5 py-2.5 text-[11px] font-medium tracking-wider text-white/50 transition-all hover:border-cyan-500/30 hover:bg-cyan-500/10 hover:text-cyan-400"
                       >
                         {cmd.label}
                       </button>
@@ -434,72 +459,66 @@ export default function PortfolioChatbot({ isOpen, onOpenChange }) {
                       type="text"
                       value={draft}
                       onChange={(e) => setDraft(e.target.value)}
-                      placeholder="Inquire further..."
-                      className="w-full rounded-xl border border-white/10 bg-white/5 px-6 py-4 text-sm text-white placeholder:text-white/20 outline-none transition-all focus:border-cyan-500/50"
+                      placeholder="Input query for system analysis..."
+                      className="w-full rounded-2xl border border-white/10 bg-white/5 px-8 py-5 text-base text-white placeholder:text-white/20 outline-none transition-all focus:border-cyan-500/40"
                     />
-                    <div className="absolute right-4 top-1/2 flex -translate-y-1/2 items-center gap-3">
+                    <div className="absolute right-6 top-1/2 flex -translate-y-1/2 items-center gap-4">
                        <button
                           type="button"
                           onClick={() => setVoiceEnabled(!voiceEnabled)}
-                          className={`flex h-8 w-8 items-center justify-center rounded-lg transition-all ${voiceEnabled ? 'text-cyan-400' : 'text-white/20'}`}
+                          className={`flex h-10 w-10 items-center justify-center rounded-xl transition-all ${voiceEnabled ? 'text-cyan-400 bg-cyan-500/10' : 'text-white/20'}`}
                         >
-                          {voiceEnabled ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
+                          {voiceEnabled ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}
                         </button>
                         <button
                           type="submit"
-                          className="flex h-8 w-8 items-center justify-center text-white/40 hover:text-cyan-400 transition-colors"
+                          className="flex h-10 w-10 items-center justify-center text-white/40 hover:text-cyan-400 transition-colors"
                         >
-                          <SendHorizonal className="h-5 w-5" />
+                          <SendHorizonal className="h-6 w-6" />
                         </button>
                     </div>
                   </form>
                 </div>
-              </div>
+              </motion.div>
 
-              {/* Right Column: Speaking Character */}
-              <div className="relative hidden flex-1 h-full md:block bg-black">
+              {/* Right Column: Speaking Character (40%) */}
+              <div className="relative hidden md:block w-[52%] h-full bg-black">
                 {/* Reactive Canvas Avatar Area */}
                 <div className="absolute inset-0 overflow-hidden">
                   <canvas
                     ref={canvasRef}
-                    width={1200}
-                    height={1200}
-                    className="h-full w-full object-cover opacity-80 mix-blend-screen brightness-125 transition-opacity duration-500"
-                    style={{ opacity: isReady ? 0.8 : 0 }}
+                    width={1600}
+                    height={1600}
+                    className="h-full w-full object-cover opacity-90 mix-blend-screen brightness-110 grayscale-[20%] transition-opacity duration-700"
+                    style={{ opacity: isReady ? 0.9 : 0 }}
                   />
                   {/* Digital Overlays */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/40" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/20" />
                   <div className="absolute inset-0 bg-gradient-to-r from-black via-transparent to-transparent" />
                   
                   {/* Status Markers */}
-                  <div className="absolute right-8 top-8 flex flex-col items-end gap-2">
-                    <div className="flex items-center gap-3 rounded-full border border-white/10 bg-black/40 px-4 py-1.5 backdrop-blur-md">
-                       <div className={`h-2 w-2 rounded-full ${isThinking || messages.some(m => m.isTyping) ? 'bg-cyan-400 animate-pulse shadow-[0_0_10px_#22d3ee]' : 'bg-white/20'}`} />
-                       <span className="text-[10px] font-bold tracking-[0.2em] text-white/80 uppercase">
-                         {isThinking || messages.some(m => m.isTyping) ? 'STREAMING' : 'IDLE'}
+                  <div className="absolute right-12 top-12 flex flex-col items-end gap-3">
+                    <div className="flex items-center gap-4 rounded-full border border-white/10 bg-black/60 px-6 py-2.5 backdrop-blur-xl">
+                       <div className={`h-2.5 w-2.5 rounded-full ${isThinking || messages.some(m => m.isTyping) ? 'bg-cyan-400 animate-pulse shadow-[0_0_15px_#22d3ee]' : 'bg-white/20'}`} />
+                       <span className="text-[11px] font-bold tracking-[0.25em] text-white/90 uppercase">
+                         {isThinking || messages.some(m => m.isTyping) ? 'LINK_ACTIVE' : 'SYSTEM_IDLE'}
                        </span>
                     </div>
-                    <div className="text-[9px] font-mono text-white/20 uppercase tracking-widest">
-                      BUFF_LATENCY: 12ms
+                    <div className="text-[10px] font-mono text-white/30 uppercase tracking-[0.3em]">
+                      SYNC_LATENCY: {Math.floor(Math.random() * 5 + 5)}MS
                     </div>
                   </div>
 
-                  {/* Character Meta */}
-                  <div className="absolute bottom-12 left-12 space-y-4">
-                    <div className="h-px w-24 bg-cyan-500/50" />
-                    <div>
-                      <p className="text-[10px] font-bold tracking-[0.3em] text-cyan-400 uppercase">SYNTHETIC_AVATAR_01</p>
-                      <h2 className="text-5xl font-bold tracking-tighter text-white/90 mt-2">ARUN_BOT</h2>
-                    </div>
-                    <p className="max-w-xs text-xs font-light leading-relaxed text-white/40 italic">
-                      "I am a digital extension of Arun's technical expertise, ready to converse on systems and design."
-                    </p>
+                  {/* Tech Specs Overlay */}
+                  <div className="absolute left-10 bottom-12 space-y-2 pointer-events-none">
+                     <div className="text-[9px] font-mono text-cyan-500/40 uppercase tracking-widest">Digital Twin v2.4.0</div>
+                     <div className="h-0.5 w-12 bg-cyan-500/20" />
+                     <div className="text-[9px] font-mono text-white/20 uppercase tracking-widest">Neural weights: Optimized</div>
                   </div>
                 </div>
 
-                {/* Decorative Tech Elements */}
-                <div className="absolute inset-0 pointer-events-none opacity-20 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:32px_32px]" />
-                <div className="absolute top-0 bottom-0 left-0 w-px bg-gradient-to-b from-transparent via-cyan-500/20 to-transparent" />
+                {/* Decorative Grid */}
+                <div className="absolute inset-0 pointer-events-none opacity-10 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:48px_48px]" />
               </div>
             </motion.section>
           </div>
