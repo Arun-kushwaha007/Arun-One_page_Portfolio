@@ -20,7 +20,7 @@ const ProjectCard = ({ project, index, targetScale }) => {
   const rotateX = useTransform(scrollYProgress, [0, 1], [5, 0]);
 
   return (
-    <div ref={container} className="h-screen flex items-center justify-center sticky top-0 ml-8 md:ml-0 md:px-0">
+    <div ref={container} className="h-screen flex items-center justify-center sticky -top-10 ml-8 md:ml-0 md:px-0">
       <Motion.div 
         style={{ scale, rotateX, opacity, top: `calc(${index * 25}px)` }} 
         className="relative flex flex-col md:flex-row h-[70vh] w-full max-w-7xl rounded-3xl bg-[#0c0c0c] border border-white/20 overflow-hidden origin-top shadow-[0_40px_100px_rgba(0,0,0,0.8)]"
@@ -77,7 +77,7 @@ const ProjectCard = ({ project, index, targetScale }) => {
                  <div className="h-[1px] flex-grow bg-gradient-to-r from-white/20 to-transparent" />
               </div>
 
-              <h3 className="text-4xl md:text-6xl font-bold text-white mb-8 tracking-tight leading-[1.1]">
+              <h3 className="text-3xl md:text-4xl font-bold text-white mb-8 tracking-tight leading-[1.1]">
                 {project.title}
               </h3>
               
@@ -103,7 +103,7 @@ const ProjectCard = ({ project, index, targetScale }) => {
                     href={project.links.demo} 
                     target="_blank" 
                     rel="noreferrer" 
-                    className="flex-grow flex items-center justify-between px-8 py-4 rounded-full bg-white text-black hover:bg-neon-blue hover:text-white transition-all duration-300 group"
+                    className="flex-grow flex items-center justify-between px-8 py-4 rounded-full bg-white text-black hover:bg-neon-blue  transition-all duration-300 group"
                  >
                     <span className="font-black text-sm tracking-widest uppercase">Explore Live</span>
                     <ArrowUpRight className="w-5 h-5 group-hover:rotate-45 transition-transform" />

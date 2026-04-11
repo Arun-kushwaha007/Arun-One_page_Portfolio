@@ -184,20 +184,6 @@ export const projects = [
     image: "/assets/rr.png"
   },
   {
-    id: "resqterra",
-    title: "ResQTerra - IoT Emergency Response",
-    tech: ["Python", "FastAPI", "React.js", "WebSockets", "IoT"],
-    description: "Drone-based rescue system utilizing LiDAR, GPR, and Jetson Nano for disaster response.",
-    points: [
-      "Engineered asynchronous backend processing live telemetry from 5+ IoT sensors.",
-      "Selected as finalist by Department of Telecommunications, Government of India at 5G Innovation Hackathon."
-    ],
-    links: {
-      github: "https://github.com/ResQTerra"
-    },
-    image: "/assets/resq.png"
-  },
-  {
     id: "self-driving-car",
     title: "Self-Driving Car Simulation",
     tech: ["JavaScript", "Neural Networks", "Genetic Algorithms"],
@@ -228,7 +214,21 @@ export const projects = [
       demo: "https://real-time-chat-app-client-taupe.vercel.app/"
     },
     image: "/assets/chat.png"
-  }
+  },
+  {
+    id: "resqterra",
+    title: "ResQTerra - IoT Emergency Response",
+    tech: ["Python", "FastAPI", "React.js", "WebSockets", "IoT"],
+    description: "Drone-based rescue system utilizing LiDAR, GPR, and Jetson Nano for disaster response.",
+    points: [
+      "Engineered asynchronous backend processing live telemetry from 5+ IoT sensors.",
+      "Selected as finalist by Department of Telecommunications, Government of India at 5G Innovation Hackathon."
+    ],
+    links: {
+      github: "https://github.com/ResQTerra"
+    },
+    image: "/assets/resq.png"
+  },
 ];
 
 export const education = {

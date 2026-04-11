@@ -15,7 +15,7 @@ import {
   ShieldCheck,
   Bot
 } from 'lucide-react';
-import { profile } from '../../data/portfolio';
+// import { profile } from '../../data/portfolio';
 import { BOT_CONFIG } from './data/ChatbotConfig';
 import { buildKnowledgeBase, resolvePortfolioIntent } from './data/chatbotKnowledge';
 import { selectPreferredVoice } from './data/chatbotVoice';
@@ -312,10 +312,7 @@ export default function PortfolioChatbot({ isOpen, onOpenChange }) {
             className="absolute -right-1 -top-1 h-3 w-3 rounded-full bg-green-500 shadow-[0_0_10px_#22c55e]" 
           />
         </div>
-        <div className="pr-6 text-left">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-400">Arun Assistant</p>
-          <p className="text-sm font-medium text-white/90">Website Q and A</p>
-        </div>
+      
       </motion.button>
 
       {/* Main Chat Overlay */}
