@@ -83,6 +83,7 @@ export default function PortfolioChatbot({ isOpen, onOpenChange }) {
   const thinkingTimeoutRef = useRef(null);
   const scrollRef = useRef(null);
   const canvasRef = useRef(null);
+  const audioRef = useRef(null);
   const frameRef = useRef(0);
   const [isReady, setIsReady] = useState(false);
 
@@ -91,11 +92,15 @@ export default function PortfolioChatbot({ isOpen, onOpenChange }) {
   const handleClose = useCallback(() => {
     if (isClosing) return;
     setIsClosing(true);
+    
+    // Play global exit voice
+    speakReply("System shutting down. Bye, see you!", "bot-close");
+
     // Force frame to 30 if we're deeper in the loop, to start the reverse sequence
     if (frameRef.current > 29) {
       frameRef.current = 29;
     }
-  }, [isClosing]);
+  }, [isClosing, speakReply]);
 
   const drawFrame = useCallback((index) => {
     const canvas = canvasRef.current;
@@ -113,14 +118,17 @@ export default function PortfolioChatbot({ isOpen, onOpenChange }) {
     });
   }, [drawFrame]);
 
-  // Reset animation when opening
+  // Reset animation and play greeting when opening
   useEffect(() => {
     if (isOpen) {
       frameRef.current = 0;
       setIsClosing(false);
       if (isReady) drawFrame(0);
+      
+      // Play global opening voice
+      speakReply("Hello, I am your digital assistant. How can I help you today?", "bot-open");
     }
-  }, [isOpen, isReady, drawFrame]);
+  }, [isOpen, isReady, drawFrame, speakReply]);
 
   // Frame animation loop
   useEffect(() => {
@@ -209,22 +217,49 @@ export default function PortfolioChatbot({ isOpen, onOpenChange }) {
     return () => {
       if (typingIntervalRef.current) window.clearInterval(typingIntervalRef.current);
       if (thinkingTimeoutRef.current) window.clearTimeout(thinkingTimeoutRef.current);
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
       window.speechSynthesis?.cancel?.();
     };
   }, []);
 
-  const speakReply = (text) => {
-    if (!voiceEnabled || !window.speechSynthesis || !text) return;
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    const selectedVoice = selectPreferredVoice(availableVoices);
-    if (selectedVoice) {
-      utterance.voice = selectedVoice;
-      utterance.lang = selectedVoice.lang;
+  const speakReply = (text, intentId) => {
+    if (!voiceEnabled || !text) return;
+
+    // 1. Clear previous playback
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
     }
-    utterance.rate = 1.1;
-    utterance.pitch = 0.95;
-    window.speechSynthesis.speak(utterance);
+    window.speechSynthesis?.cancel?.();
+
+    // 2. Try the pre-recorded local file
+    const audioPath = `/assets/audio/chatbot/${intentId}.mp3`;
+    const audio = new Audio(audioPath);
+    
+    // Safety check for browser voice fallback
+    const systemFallback = () => {
+      console.warn(`Local audio [${intentId}.mp3] missing, using system fallback.`);
+      if (!window.speechSynthesis) return;
+      const utterance = new SpeechSynthesisUtterance(text);
+      const selectedVoice = selectPreferredVoice(availableVoices);
+      if (selectedVoice) {
+        utterance.voice = selectedVoice;
+        utterance.lang = selectedVoice.lang;
+      }
+      utterance.rate = 1.1;
+      utterance.pitch = 0.95;
+      window.speechSynthesis.speak(utterance);
+    };
+
+    audio.oncanplaythrough = () => {
+      audioRef.current = audio;
+      audio.play().catch(systemFallback);
+    };
+
+    audio.onerror = systemFallback;
   };
 
   const clearActivePlayback = () => {
@@ -235,6 +270,10 @@ export default function PortfolioChatbot({ isOpen, onOpenChange }) {
     if (thinkingTimeoutRef.current) {
       window.clearTimeout(thinkingTimeoutRef.current);
       thinkingTimeoutRef.current = null;
+    }
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
     }
     window.speechSynthesis?.cancel?.();
   };
@@ -282,7 +321,7 @@ export default function PortfolioChatbot({ isOpen, onOpenChange }) {
         if (nextIndex >= intent.reply.length) {
           window.clearInterval(typingIntervalRef.current);
           typingIntervalRef.current = null;
-          speakReply(intent.reply);
+          speakReply(intent.reply, intent.id);
         }
       }, TYPING_SPEED_MS);
     }, TYPING_DELAY_MS);

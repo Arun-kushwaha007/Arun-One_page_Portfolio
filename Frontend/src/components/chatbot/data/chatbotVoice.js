@@ -18,13 +18,16 @@ function scoreVoice(voice) {
   if (name.includes('natural')) score += 180;
   if (name.includes('online')) score += 100;
 
-  if (name.includes('female')) score += 40;
-  if (name.includes('zira')) score += 28;
-  if (name.includes('aria')) score += 26;
-  if (name.includes('sonia')) score += 24;
-  if (name.includes('heera')) score += 24;
-  if (name.includes('google')) score += 40; // Boosted
-  if (name.includes('microsoft')) score += 30; // Boosted
+  // Pivot to MALE voices
+  if (name.includes('male')) score += 100;
+  if (name.includes('guy')) score += 80;
+  if (name.includes('david')) score += 60;
+  if (name.includes('mark')) score += 60;
+  if (name.includes('george')) score += 60;
+  if (name.includes('james')) score += 60;
+
+  if (name.includes('google')) score += 40; 
+  if (name.includes('microsoft')) score += 30;
   if (voice?.localService) score += 8;
   if (voice?.default) score += 6;
 
