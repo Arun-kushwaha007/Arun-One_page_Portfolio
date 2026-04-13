@@ -67,8 +67,9 @@ export default function PortfolioChatbot({ isOpen, onOpenChange }) {
   const audioRef = useRef(null);
   const frameRef = useRef(0);
   const [isReady, setIsReady] = useState(false);
+  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
 
-  const isBotSpeaking = useMemo(() => isThinking || messages.some((m) => m.isTyping), [isThinking, messages]);
+  const isBotSpeaking = useMemo(() => isThinking || messages.some((m) => m.isTyping) || isAudioPlaying, [isThinking, messages, isAudioPlaying]);
 
   const clearActivePlayback = useCallback(() => {
     if (typingIntervalRef.current) {
@@ -91,39 +92,77 @@ export default function PortfolioChatbot({ isOpen, onOpenChange }) {
 
     // 1. Clear previous playback
     clearActivePlayback();
+    setIsAudioPlaying(false);
 
-    // 2. Try the pre-recorded local file from cache
-    const preloadedAudio = assetCache.audio[intentId];
-    
-    // Safety check for browser voice fallback
+    // 2. Fallback logic: Only use TTS if local audio is unavailable
     const systemFallback = () => {
-      console.warn(`Local audio [${intentId}.mp3] missing or failed, using system fallback.`);
+      // Final guard: if browser is already speaking or if we explicitly don't want fallback
       if (!window.speechSynthesis) return;
+      
+      console.log(`[Audio] Using system voice fallback for: ${intentId}`);
       const utterance = new SpeechSynthesisUtterance(text);
       const selectedVoice = selectPreferredVoice(availableVoices);
       if (selectedVoice) {
         utterance.voice = selectedVoice;
         utterance.lang = selectedVoice.lang;
       }
-      utterance.rate = 1.1;
-      utterance.pitch = 0.95;
+      utterance.rate = 1.05;
+      utterance.pitch = 0.85;
+      
+      utterance.onstart = () => {
+        if (intentId !== 'bot-open') setIsAudioPlaying(true);
+      };
+      utterance.onend = () => setIsAudioPlaying(false);
+      utterance.onerror = () => setIsAudioPlaying(false);
+
       window.speechSynthesis.speak(utterance);
     };
 
+    // 3. Attempt local playback (Preloaded or On-demand)
+    const preloadedAudio = assetCache.audio[intentId];
+
     if (preloadedAudio) {
+      console.log(`[Audio] Playing preloaded asset: ${intentId}`);
       audioRef.current = preloadedAudio;
-      // Reset position and play
       preloadedAudio.currentTime = 0;
-      preloadedAudio.play().catch(systemFallback);
+      
+      if (intentId !== 'bot-open') setIsAudioPlaying(true);
+      
+      const onEnded = () => {
+        setIsAudioPlaying(false);
+        preloadedAudio.removeEventListener('ended', onEnded);
+      };
+      preloadedAudio.addEventListener('ended', onEnded);
+      
+      // If preloaded, we assume it exists. If it fails (e.g. autoplay), 
+      // we only fallback if it's a critical failure.
+      preloadedAudio.play().catch(err => {
+        console.warn("[Audio] Preloaded play failed:", err);
+        // Don't necessarily fallback to TTS for autoplay errors, 
+        // usually if preloaded exists, we want THAT or nothing.
+        // But for safety, we fallback if it's not and autoplay issue.
+        if (err.name !== 'NotAllowedError') systemFallback();
+        else setIsAudioPlaying(false);
+      });
     } else {
-      // Try one-off load if not in cache (maybe dynamic)
+      // Intent not in cache, try one-off load
       const audioPath = `/assets/audio/chatbot/${intentId}.mp3`;
+      console.log(`[Audio] Checking local file: ${audioPath}`);
       const audio = new Audio(audioPath);
+      
       audio.oncanplaythrough = () => {
         audioRef.current = audio;
+        if (intentId !== 'bot-open') setIsAudioPlaying(true);
+        audio.onended = () => setIsAudioPlaying(false);
         audio.play().catch(systemFallback);
       };
-      audio.onerror = systemFallback;
+      
+      audio.onerror = () => {
+        console.warn(`[Audio] Local file not found at ${audioPath}`);
+        systemFallback();
+      };
+
+      audio.load();
     }
   }, [voiceEnabled, availableVoices, clearActivePlayback]);
 
@@ -201,8 +240,9 @@ export default function PortfolioChatbot({ isOpen, onOpenChange }) {
           nextFrame += 1;
         }
       } else {
-        // Idle logic: Play frames 1-40 (indices 0-39) once, then hold at 40
-        if (nextFrame < 39) {
+        // Opening + Idle logic
+        // Play opening frames 1-30 (indices 0-29), then jump to idle frame 40 (index 39)
+        if (nextFrame < 29) {
           nextFrame += 1;
         } else {
           nextFrame = 39;
@@ -298,6 +338,9 @@ export default function PortfolioChatbot({ isOpen, onOpenChange }) {
       setReaction(intent.reaction);
       setPromptIds(intent.followUps);
 
+      // START AUDIO IMMEDIATELY with the answer
+      speakReply(intent.reply, intent.id);
+
       typingIntervalRef.current = window.setInterval(() => {
         nextIndex += 1;
         setMessages((current) =>
@@ -315,7 +358,7 @@ export default function PortfolioChatbot({ isOpen, onOpenChange }) {
         if (nextIndex >= intent.reply.length) {
           window.clearInterval(typingIntervalRef.current);
           typingIntervalRef.current = null;
-          speakReply(intent.reply, intent.id);
+          // Audio is already playing or finished
         }
       }, TYPING_SPEED_MS);
     }, TYPING_DELAY_MS);
