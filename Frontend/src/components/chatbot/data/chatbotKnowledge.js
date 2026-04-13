@@ -50,14 +50,51 @@ function projectKeywords(project) {
 }
 
 export function buildKnowledgeBase() {
-  const projectEntries = projects.map((project) => ({
-    id: `project-${project.id}`,
-    label: project.title,
-    keywords: projectKeywords(project),
-    reply: projectReply(project),
-    followUps: ['projects', 'stack', 'contact'],
-    reaction: 'project-mode',
-  }));
+  const commonFollowUps = ['projects', 'stack', 'experience', 'contact'];
+  const projectFollowUps = ['project-pdf-csv-pipeline', 'project-collabnest', 'project-ai-fir', 'project-resume-roaster', 'project-self-driving-car'];
+
+  const projectEntries = [
+    {
+      id: 'project-pdf-csv-pipeline',
+      label: 'PDF-CSV Pipeline',
+      keywords: ['pdf', 'csv', 'pipeline', 'enterprise', 'gcp', 'document ai'],
+      reply: "The Enterprise PDF to CSV Pipeline is a production-grade system using GCP Document AI. It processes over 5,000 documents per batch and features dynamic worker scaling with rate-limiting.",
+      followUps: projectFollowUps.filter(id => id !== 'project-pdf-csv-pipeline').concat(['stack', 'contact']),
+      reaction: 'project-mode',
+    },
+    {
+      id: 'project-collabnest',
+      label: 'Collab-Nest',
+      keywords: ['collab-nest', 'collaboration', 'real-time', 'socket', 'redis'],
+      reply: "Collab-Nest is a real-time collaboration platform. It was build with Node.js, Socket-IO, and Redis. It's designed for high performance, handling over 100 requests per second with near-zero connection failures.",
+      followUps: projectFollowUps.filter(id => id !== 'project-collabnest').concat(['stack', 'contact']),
+      reaction: 'project-mode',
+    },
+    {
+      id: 'project-ai-fir',
+      label: 'AI-FIR Analysis',
+      keywords: ['fir', 'legal', 'police', 'ai fir', 'hackathon'],
+      reply: "The AI FIR analysis project uses a RAG pipeline for legal-act prediction. It ranked in the top 10 out of over 400 teams at the Rajasthan Police Hackathon for its accuracy and system design.",
+      followUps: projectFollowUps.filter(id => id !== 'project-ai-fir').concat(['stack', 'contact']),
+      reaction: 'project-mode',
+    },
+    {
+      id: 'project-resume-roaster',
+      label: 'Resume Roaster',
+      keywords: ['resume', 'roaster', 'ats', 'optimizer', 'llm'],
+      reply: "Resume Roaster is an AI-powered ATS optimizer. It uses LLMs for semantic parsing and keyword optimization, currently processing over 100 requests daily with very low response times.",
+      followUps: projectFollowUps.filter(id => id !== 'project-resume-roaster').concat(['stack', 'contact']),
+      reaction: 'project-mode',
+    },
+    {
+      id: 'project-self-driving-car',
+      label: 'Self-Driving Car',
+      keywords: ['self-driving', 'car', 'simulation', 'neural network', 'genetic algorithm'],
+      reply: "This is a JavaScript-based self-driving car simulation. It uses Neural Networks and Genetic Algorithms for autonomous navigation, complete with ray-casting sensors and collision detection.",
+      followUps: projectFollowUps.filter(id => id !== 'project-self-driving-car').concat(['stack', 'contact']),
+      reaction: 'project-mode',
+    }
+  ];
 
   const entries = [
     {
@@ -70,61 +107,41 @@ export function buildKnowledgeBase() {
     },
     {
       id: 'projects',
-      label: 'Show project highlights',
+      label: 'Projects',
       keywords: ['projects', 'project', 'portfolio', 'build', 'work', 'demo'],
-      reply: `Here are the main projects on the website:
-
-- ${projects.slice(0, 5).map((project) => project.title).join('\n- ')}
-
-Ask for any one project by name and I will answer from the website content only.`,
-      followUps: projectEntries.slice(0, 4).map((entry) => entry.id),
+      reply: "Arun has several high-impact projects. The main highlights include an Enterprise PDF to CSV Pipeline, the Collab-Nest real-time platform, AI FIR analysis, and a Self-Driving Car simulation. Which one would you like to hear more about?",
+      followUps: ['project-pdf-csv-pipeline', 'project-collabnest', 'project-ai-fir', 'project-resume-roaster', 'project-self-driving-car'],
       reaction: 'project-mode',
     },
     {
       id: 'stack',
-      label: 'What is the tech stack?',
+      label: 'Tech Stack',
       keywords: ['stack', 'skills', 'tech', 'tools', 'frameworks', 'languages', 'backend', 'frontend', 'cloud'],
-      reply: `Arun's website lists this stack:
-
-${skillSummary()}`,
+      reply: "Arun's tech stack is quite extensive. He works with JavaScript, Python, and Go for languages. For backend, he uses Node.js, Express, and FastAPI with databases like PostgreSQL and Redis. He's also proficient in Cloud and DevOps tools like GCP, AWS, Docker, and Kubernetes.",
       followUps: ['projects', 'experience', 'contact'],
       reaction: 'cpu',
     },
     {
       id: 'experience',
-      label: 'Show experience',
-      keywords: ['experience', 'internship', 'intern', 'work', 'career', 'roles'],
-      reply: `Experience highlights:
-
-- ${experiences
-        .slice(0, 4)
-        .map((experience) => `${experience.role} at ${experience.company.trim()} (${experience.period})`)
-        .join('\n- ')}`,
-      followUps: ['education', 'projects', 'contact'],
+      label: 'Experience',
+      keywords: ['experience', 'internship', 'intern', 'work', 'career', 'roles', 'spec'],
+      reply: "Arun has professional experience as a Software Developer Intern at Credit-Mitra and as a Freelance Full-Stack Engineer. He also has significant leadership experience as the President of the SPEC Society at NIT Hamirpur.",
+      followUps: ['projects', 'education', 'contact'],
       reaction: 'document',
     },
     {
       id: 'education',
       label: 'Education',
       keywords: ['education', 'college', 'degree', 'nit', 'cgpa', 'study'],
-      reply: `${education.degree}
-${education.institution}
-${education.period}
-CGPA: ${education.cgpa}
-Coursework: ${education.coursework}`,
-      followUps: ['experience', 'projects', 'contact'],
+      reply: "Arun is pursuing a B-Tech in Electronics and Communication from NIT Hamirpur. He maintains a strong CGPA of 8.05 and has completed advanced coursework in System Design, Algorithms, and Operating Systems.",
+      followUps: ['projects', 'experience', 'contact'],
       reaction: 'document',
     },
     {
       id: 'contact',
-      label: 'How can I contact Arun?',
-      keywords: ['contact', 'email', 'phone', 'hire', 'reach', 'linkedin', 'github', 'connect'],
-      reply: `You can contact Arun through:
-
-Email: ${profile.email}
-Phone: ${profile.phone}
-LinkedIn: ${profile.social.linkedin}
-GitHub: ${profile.social.github}`,
+      label: 'Contact',
+      keywords: ['contact', 'email', 'phone', 'reach', 'linkedin', 'github', 'connect'],
+      reply: "You can reach Arun via email at arunsk1310@gmail.com. You can also connect with him on LinkedIn or check out his latest code contributions on GitHub.",
       followUps: ['projects', 'stack', 'experience'],
       reaction: 'mail',
     },
@@ -173,6 +190,16 @@ export function resolvePortfolioIntent(rawText = '', knowledgeBase = buildKnowle
   );
   if (commandMatch) {
     return knowledgeBase.entriesById[commandMatch.id] ?? knowledgeBase.fallback;
+  }
+
+  // Check for exact ID match (useful for button clicks)
+  if (knowledgeBase.entriesById[normalizedInput.replace(/\s+/g, '-')]) {
+    return knowledgeBase.entriesById[normalizedInput.replace(/\s+/g, '-')];
+  }
+  
+  // Also check for ID match without the 'project-' prefix if applicable
+  if (knowledgeBase.entriesById[normalizedInput]) {
+    return knowledgeBase.entriesById[normalizedInput];
   }
 
   const bestMatch = knowledgeBase.entries

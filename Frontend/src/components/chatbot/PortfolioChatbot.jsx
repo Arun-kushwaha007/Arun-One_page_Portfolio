@@ -22,7 +22,7 @@ import { selectPreferredVoice } from './data/chatbotVoice';
 import { assetCache } from '../../utils/assetLoader';
 
 const TYPING_DELAY_MS = 250;
-const TYPING_SPEED_MS = 14;
+const TYPING_SPEED_MS = 8;
 
 // No local loading logic needed anymore
 
@@ -65,6 +65,7 @@ export default function PortfolioChatbot({ isOpen, onOpenChange }) {
   const scrollRef = useRef(null);
   const canvasRef = useRef(null);
   const audioRef = useRef(null);
+  const openingAudioTimeoutRef = useRef(null);
   const frameRef = useRef(0);
   const [isReady, setIsReady] = useState(false);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
@@ -203,15 +204,22 @@ export default function PortfolioChatbot({ isOpen, onOpenChange }) {
     };
   }, [drawFrame]);
 
-  // Reset animation and play greeting when opening
   useEffect(() => {
     if (isOpen) {
       frameRef.current = 0;
       setIsClosing(false);
       if (isReady) drawFrame(0);
       
-      // Play global opening voice
-      speakReply("Hello, I am your digital assistant. How can I help you today?", "bot-open");
+      // Play global opening voice with a 2-second delay
+      openingAudioTimeoutRef.current = window.setTimeout(() => {
+        speakReply("Hello, I am your digital assistant. How can I help you today?", "bot-open");
+      }, 2000);
+    } else {
+      // Clear timeout if closed early
+      if (openingAudioTimeoutRef.current) {
+        window.clearTimeout(openingAudioTimeoutRef.current);
+        openingAudioTimeoutRef.current = null;
+      }
     }
   }, [isOpen, isReady, drawFrame, speakReply]);
 
@@ -229,6 +237,14 @@ export default function PortfolioChatbot({ isOpen, onOpenChange }) {
         } else {
           // Animation finished, actually close the modal
           onOpenChange(false);
+          
+          // Reset chat state for a fresh start next time
+          setMessages([welcomeMessage]);
+          setPromptIds(knowledgeBase.defaultPromptIds);
+          setReaction('idle');
+          setIsThinking(false);
+          setDraft('');
+          
           clearInterval(interval);
           return;
         }
@@ -303,6 +319,7 @@ export default function PortfolioChatbot({ isOpen, onOpenChange }) {
     return () => {
       if (typingIntervalRef.current) window.clearInterval(typingIntervalRef.current);
       if (thinkingTimeoutRef.current) window.clearTimeout(thinkingTimeoutRef.current);
+      if (openingAudioTimeoutRef.current) window.clearTimeout(openingAudioTimeoutRef.current);
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current = null;
@@ -518,15 +535,22 @@ export default function PortfolioChatbot({ isOpen, onOpenChange }) {
                 {/* Footer Actions */}
                 <div className="p-8 md:p-12 pt-0 space-y-8">
                   <div className="flex flex-wrap gap-3">
-                    {knowledgeBase.quickCommands.slice(0, 4).map((cmd) => (
-                      <button
-                        key={cmd.id}
-                        onClick={() => handleCommandClick(cmd)}
-                        className="rounded-full border border-white/10 bg-white/5 px-5 py-2.5 text-[11px] font-medium tracking-wider text-white/50 transition-all hover:border-cyan-500/30 hover:bg-cyan-500/10 hover:text-cyan-400"
-                      >
-                        {cmd.label}
-                      </button>
-                    ))}
+                    {promptIds.map((id) => {
+                      const entry = intentMap[id];
+                      if (!entry) return null;
+                      return (
+                        <button
+                          key={id}
+                          onClick={() => {
+                            setMessages((current) => [...current, createMessage('user', entry.label, { isCommand: true })]);
+                            sendMessage(entry.id, true); // Send the ID as the command for exact matching
+                          }}
+                          className="rounded-full border border-white/10 bg-white/5 px-5 py-2.5 text-[11px] font-medium tracking-wider text-white/50 transition-all hover:border-cyan-500/30 hover:bg-cyan-500/10 hover:text-cyan-400"
+                        >
+                          {entry.label}
+                        </button>
+                      );
+                    })}
                   </div>
 
                   <form onSubmit={handleSubmit} className="relative group">
