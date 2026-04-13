@@ -69,6 +69,7 @@ export default function PortfolioChatbot({ isOpen, onOpenChange }) {
   const frameRef = useRef(0);
   const [isReady, setIsReady] = useState(false);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
+  const [characterMode, setCharacterMode] = useState('bot'); // 'bot' or 'hero'
 
   const isBotSpeaking = useMemo(() => isThinking || messages.some((m) => m.isTyping) || isAudioPlaying, [isThinking, messages, isAudioPlaying]);
 
@@ -180,12 +181,13 @@ export default function PortfolioChatbot({ isOpen, onOpenChange }) {
     }
   }, [isClosing, speakReply]);
 
-  const drawFrame = useCallback((index) => {
+  const drawFrame = useCallback((index, set = 'bot') => {
     const canvas = canvasRef.current;
-    if (!canvas || !assetCache.chatbotAvatar[index]) return;
+    const images = set === 'bot' ? assetCache.chatbotAvatar : assetCache.heroIdle;
+    if (!canvas || !images[index]) return;
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(assetCache.chatbotAvatar[index], 0, 0, canvas.width, canvas.height);
+    ctx.drawImage(images[index], 0, 0, canvas.width, canvas.height);
   }, []);
 
   // Reactive check for assets
@@ -204,11 +206,13 @@ export default function PortfolioChatbot({ isOpen, onOpenChange }) {
     };
   }, [drawFrame]);
 
+  // Reset animation and play greeting when opening
   useEffect(() => {
     if (isOpen) {
       frameRef.current = 0;
       setIsClosing(false);
-      if (isReady) drawFrame(0);
+      setCharacterMode('bot'); // Always start as bot
+      if (isReady) drawFrame(0, 'bot');
       
       // Play global opening voice with a 2-second delay
       openingAudioTimeoutRef.current = window.setTimeout(() => {
@@ -229,48 +233,72 @@ export default function PortfolioChatbot({ isOpen, onOpenChange }) {
 
     const interval = setInterval(() => {
       let nextFrame = frameRef.current;
+      let nextMode = characterMode;
 
       if (isClosing) {
         // Shutdown logic: Reverse frames 30 -> 1 (indices 29 -> 0)
+        // We ALWAYS use bot assets for the final shutdown regardless of characterMode
         if (nextFrame > 0) {
           nextFrame -= 1;
+          nextMode = 'bot'; 
         } else {
-          // Animation finished, actually close the modal
           onOpenChange(false);
-          
-          // Reset chat state for a fresh start next time
           setMessages([welcomeMessage]);
           setPromptIds(knowledgeBase.defaultPromptIds);
           setReaction('idle');
           setIsThinking(false);
           setDraft('');
-          
           clearInterval(interval);
           return;
         }
-      } else if (isBotSpeaking) {
-        // Loop speaking frames: 31 to 50 (indices 30 to 49)
-        if (nextFrame < 30 || nextFrame >= 49) {
-          nextFrame = 30;
+      } else if (!voiceEnabled) {
+        // Voice OFF: Human Avatar Mode
+        if (nextMode === 'bot') {
+          // Phase 1: Power down current bot
+          if (nextFrame > 0) {
+            nextFrame -= 1;
+          } else {
+            // Phase 2: Switch to Hero
+            nextMode = 'hero';
+            nextFrame = 0;
+          }
         } else {
-          nextFrame += 1;
+          // Phase 3: Loop Hero Idle (0-29)
+          nextFrame = (nextFrame + 1) % 30;
         }
       } else {
-        // Opening + Idle logic
-        // Play opening frames 1-30 (indices 0-29), then jump to idle frame 40 (index 39)
-        if (nextFrame < 29) {
-          nextFrame += 1;
+        // Voice ON: AI Bot Mode
+        if (nextMode === 'hero') {
+          // Switch back to bot opening state
+          nextMode = 'bot';
+          nextFrame = 0;
+        }
+
+        if (isBotSpeaking) {
+          // Loop speaking frames: 31 to 50 (indices 30 to 49)
+          if (nextFrame < 30 || nextFrame >= 49) {
+            nextFrame = 30;
+          } else {
+            nextFrame += 1;
+          }
         } else {
-          nextFrame = 39;
+          // Opening + Idle logic
+          // Play opening frames 1-30 (indices 0-29), then jump to idle frame 40 (index 39)
+          if (nextFrame < 29) {
+            nextFrame += 1;
+          } else {
+            nextFrame = 39;
+          }
         }
       }
       
       frameRef.current = nextFrame;
-      drawFrame(nextFrame);
-    }, isClosing ? 50 : 120); // Play faster when closing for the "flash" effect
+      setCharacterMode(nextMode);
+      drawFrame(nextFrame, nextMode);
+    }, isClosing ? 50 : (characterMode === 'hero' ? 80 : 120));
 
     return () => clearInterval(interval);
-  }, [isReady, isBotSpeaking, isClosing, drawFrame, onOpenChange]);
+  }, [isReady, isBotSpeaking, isClosing, voiceEnabled, characterMode, drawFrame, onOpenChange, welcomeMessage, knowledgeBase]);
 
   useEffect(() => {
     if (scrollRef.current) {
