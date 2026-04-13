@@ -64,11 +64,7 @@ export function buildKnowledgeBase() {
       id: 'intro',
       label: 'Tell me about Arun',
       keywords: ['who is arun', 'about arun', 'about', 'background', 'summary', profile.name],
-      reply: `${profile.name} is a ${profile.role}.
-
-${profile.summary}
-
-Location: ${profile.location}`,
+      reply: "Arun Kushwaha is a Full-Stack Developer specializing in scalable backend systems and cloud infrastructure. He is a final-year student at NIT Hamirpur with a focus on low-latency architectures and production-grade services.",
       followUps: ['projects', 'stack', 'experience', 'contact'],
       reaction: 'wave',
     },

@@ -4,30 +4,7 @@ import { ArrowRight, Github, Linkedin, Mail, Sparkles, Terminal, Shield } from '
 import { profile } from '../data/portfolio';
 import { useCursor } from '../context/CursorContext.jsx';
 
-// ─────────────────────────────────────────────────────────────
-// Shared image cache (loaded once, used by both Hero and About)
-// ─────────────────────────────────────────────────────────────
-const heroImagesCache = { images: [], loaded: false };
-const moveImagesCache = { images: [], loaded: false };
-
-function loadImageSet(folder, count, cache) {
-  if (cache.loaded) return Promise.resolve(cache.images);
-  
-  const promises = Array.from({ length: count }, (_, i) => {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.src = `/assets/${folder}/${String(i + 1).padStart(2, '0')} - Edited.png`;
-      img.onload = () => resolve(img);
-      img.onerror = () => resolve(null);
-    });
-  });
-
-  return Promise.all(promises).then((results) => {
-    cache.images = results.filter(img => img !== null);
-    cache.loaded = true;
-    return cache.images;
-  });
-}
+import { assetCache } from '../utils/assetLoader';
 
 // ─────────────────────────────────────────────────────────────
 // AboutAvatar: Simple 36-50 loop from avatar-move set ONLY
@@ -39,18 +16,26 @@ export const AboutAvatar = ({ isVisible = false }) => {
 
   const draw = useCallback((index) => {
     const canvas = canvasRef.current;
-    if (!canvas || !moveImagesCache.images[index]) return;
+    if (!canvas || !assetCache.heroMove[index]) return;
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(moveImagesCache.images[index], 0, 0, canvas.width, canvas.height);
+    ctx.drawImage(assetCache.heroMove[index], 0, 0, canvas.width, canvas.height);
   }, []);
 
-  // Load move images if not already loaded
+  // Reactive check for assets
   useEffect(() => {
-    loadImageSet('avatar-move', 50, moveImagesCache).then(() => {
-      setIsReady(true);
-      draw(35); // paint frame 36 immediately
-    });
+    const handleReady = () => {
+      if (assetCache.isLoaded || assetCache.heroMove.length > 0) {
+        setIsReady(true);
+        draw(35);
+      }
+    };
+
+    handleReady();
+    assetCache.listeners.push(handleReady);
+    return () => {
+      assetCache.listeners = assetCache.listeners.filter(l => l !== handleReady);
+    };
   }, [draw]);
 
   // Loop frames 36-50 (indices 35-49)
@@ -91,29 +76,34 @@ const HeroAvatar = ({ scrollYProgress }) => {
 
   const drawHero = useCallback((index) => {
     const canvas = canvasRef.current;
-    if (!canvas || !heroImagesCache.images[index]) return;
+    if (!canvas || !assetCache.heroIdle[index]) return;
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(heroImagesCache.images[index], 0, 0, canvas.width, canvas.height);
+    ctx.drawImage(assetCache.heroIdle[index], 0, 0, canvas.width, canvas.height);
   }, []);
 
   const drawMove = useCallback((index) => {
     const canvas = canvasRef.current;
-    if (!canvas || !moveImagesCache.images[index]) return;
+    if (!canvas || !assetCache.heroMove[index]) return;
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(moveImagesCache.images[index], 0, 0, canvas.width, canvas.height);
+    ctx.drawImage(assetCache.heroMove[index], 0, 0, canvas.width, canvas.height);
   }, []);
 
-  // ── Load all images on mount ──
+  // Reactive check for assets
   useEffect(() => {
-    Promise.all([
-      loadImageSet('avatar', 30, heroImagesCache),
-      loadImageSet('avatar-move', 50, moveImagesCache),
-    ]).then(() => {
-      setIsReady(true);
-      drawHero(0); // paint first frame immediately
-    });
+    const handleReady = () => {
+      if (assetCache.isLoaded || assetCache.heroIdle.length > 0) {
+        setIsReady(true);
+        drawHero(0);
+      }
+    };
+
+    handleReady();
+    assetCache.listeners.push(handleReady);
+    return () => {
+      assetCache.listeners = assetCache.listeners.filter(l => l !== handleReady);
+    };
   }, [drawHero]);
 
   // ── Hero idle loop (30 frames) ──
@@ -171,7 +161,7 @@ const HeroAvatar = ({ scrollYProgress }) => {
   const avatarY = useTransform(
     scrollYProgress, 
     [0, 0.5, 1], 
-    isMobile ? [0, 300, 550] : [0, 400, 800]
+    isMobile ? [0, 300, 550] : [0, 400, 750]
   );
   const avatarX = useTransform(
     scrollYProgress, 
@@ -181,7 +171,7 @@ const HeroAvatar = ({ scrollYProgress }) => {
   const avatarScale = useTransform(
     scrollYProgress, 
     [0, 0.5, 0.8, 1], 
-    isMobile ? [1, 0.95, 0.92, 0.87] : [1, 0.7, 0.5, 0.4]
+    isMobile ? [1, 0.95, 0.92, 0.87] : [1, 0.7, 0.5, 0.35]
   );
   const avatarOpacity = useTransform(
     scrollYProgress, 

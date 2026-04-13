@@ -19,8 +19,8 @@ import {
 
 export const profile = {
   name: "Arun Kushwaha",
-  role: "Full-Stack Developer | DevOps Enthusiast | AI/ML Innovator",
-  summary: "Final-year B.Tech (NIT Hamirpur). Backend / systems engineer focused on low-latency, real-time services and production-grade cloud deployments. Built and load-tested MERN backends (Socket.IO + Redis), designed scalable document-processing pipelines on GCP, and productionized ML+RAG inference. Strong in system design, observability, CI/CD and performance tuning.",
+  role: "Full-Stack Developer specializing in Scalable Backend Systems",
+  summary: "Final-year B.Tech student at NIT Hamirpur with a focus on low-latency architectures and production-grade services. Dedicated to building efficient cloud infrastructure and high-performance real-time applications.",
   hero: {
     eyebrow: "Full-Stack Engineer • DevOps • AI Systems",
     headline: "Arun Kushwaha",

@@ -19,31 +19,12 @@ import {
 import { BOT_CONFIG } from './data/ChatbotConfig';
 import { buildKnowledgeBase, resolvePortfolioIntent } from './data/chatbotKnowledge';
 import { selectPreferredVoice } from './data/chatbotVoice';
+import { assetCache } from '../../utils/assetLoader';
 
 const TYPING_DELAY_MS = 250;
 const TYPING_SPEED_MS = 14;
 
-// Shared image cache loaded once and kept in memory
-const avatarCache = { images: [], loaded: false };
-
-function loadAvatarImages() {
-  if (avatarCache.loaded) return Promise.resolve(avatarCache.images);
-  
-  const promises = Array.from({ length: 50 }, (_, i) => {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.src = `/assets/avatar-chat-bot/${String(i + 1).padStart(2, '0')} - Edited.png`;
-      img.onload = () => resolve(img);
-      img.onerror = () => resolve(null);
-    });
-  });
-
-  return Promise.all(promises).then((results) => {
-    avatarCache.images = results.filter(img => img !== null);
-    avatarCache.loaded = true;
-    return avatarCache.images;
-  });
-}
+// No local loading logic needed anymore
 
 function createMessage(role, text, extras = {}) {
   return {
@@ -73,7 +54,7 @@ export default function PortfolioChatbot({ isOpen, onOpenChange }) {
   const [messages, setMessages] = useState([welcomeMessage]);
   const [promptIds, setPromptIds] = useState(knowledgeBase.defaultPromptIds);
   const [reaction, setReaction] = useState('idle');
-  const [voiceEnabled, setVoiceEnabled] = useState(false);
+  const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [draft, setDraft] = useState('');
   const [isThinking, setIsThinking] = useState(false);
   const [availableVoices, setAvailableVoices] = useState([]);
@@ -88,6 +69,63 @@ export default function PortfolioChatbot({ isOpen, onOpenChange }) {
   const [isReady, setIsReady] = useState(false);
 
   const isBotSpeaking = useMemo(() => isThinking || messages.some((m) => m.isTyping), [isThinking, messages]);
+
+  const clearActivePlayback = useCallback(() => {
+    if (typingIntervalRef.current) {
+      window.clearInterval(typingIntervalRef.current);
+      typingIntervalRef.current = null;
+    }
+    if (thinkingTimeoutRef.current) {
+      window.clearTimeout(thinkingTimeoutRef.current);
+      thinkingTimeoutRef.current = null;
+    }
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+    window.speechSynthesis?.cancel?.();
+  }, []);
+
+  const speakReply = useCallback((text, intentId) => {
+    if (!voiceEnabled || !text) return;
+
+    // 1. Clear previous playback
+    clearActivePlayback();
+
+    // 2. Try the pre-recorded local file from cache
+    const preloadedAudio = assetCache.audio[intentId];
+    
+    // Safety check for browser voice fallback
+    const systemFallback = () => {
+      console.warn(`Local audio [${intentId}.mp3] missing or failed, using system fallback.`);
+      if (!window.speechSynthesis) return;
+      const utterance = new SpeechSynthesisUtterance(text);
+      const selectedVoice = selectPreferredVoice(availableVoices);
+      if (selectedVoice) {
+        utterance.voice = selectedVoice;
+        utterance.lang = selectedVoice.lang;
+      }
+      utterance.rate = 1.1;
+      utterance.pitch = 0.95;
+      window.speechSynthesis.speak(utterance);
+    };
+
+    if (preloadedAudio) {
+      audioRef.current = preloadedAudio;
+      // Reset position and play
+      preloadedAudio.currentTime = 0;
+      preloadedAudio.play().catch(systemFallback);
+    } else {
+      // Try one-off load if not in cache (maybe dynamic)
+      const audioPath = `/assets/audio/chatbot/${intentId}.mp3`;
+      const audio = new Audio(audioPath);
+      audio.oncanplaythrough = () => {
+        audioRef.current = audio;
+        audio.play().catch(systemFallback);
+      };
+      audio.onerror = systemFallback;
+    }
+  }, [voiceEnabled, availableVoices, clearActivePlayback]);
 
   const handleClose = useCallback(() => {
     if (isClosing) return;
@@ -104,18 +142,26 @@ export default function PortfolioChatbot({ isOpen, onOpenChange }) {
 
   const drawFrame = useCallback((index) => {
     const canvas = canvasRef.current;
-    if (!canvas || !avatarCache.images[index]) return;
+    if (!canvas || !assetCache.chatbotAvatar[index]) return;
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(avatarCache.images[index], 0, 0, canvas.width, canvas.height);
+    ctx.drawImage(assetCache.chatbotAvatar[index], 0, 0, canvas.width, canvas.height);
   }, []);
 
-  // Preload frames once
+  // Reactive check for assets
   useEffect(() => {
-    loadAvatarImages().then(() => {
-      setIsReady(true);
-      drawFrame(0);
-    });
+    const handleReady = () => {
+      if (assetCache.isLoaded || assetCache.chatbotAvatar.length > 0) {
+        setIsReady(true);
+        drawFrame(0);
+      }
+    };
+
+    handleReady();
+    assetCache.listeners.push(handleReady);
+    return () => {
+      assetCache.listeners = assetCache.listeners.filter(l => l !== handleReady);
+    };
   }, [drawFrame]);
 
   // Reset animation and play greeting when opening
@@ -225,58 +271,6 @@ export default function PortfolioChatbot({ isOpen, onOpenChange }) {
     };
   }, []);
 
-  const speakReply = (text, intentId) => {
-    if (!voiceEnabled || !text) return;
-
-    // 1. Clear previous playback
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current = null;
-    }
-    window.speechSynthesis?.cancel?.();
-
-    // 2. Try the pre-recorded local file
-    const audioPath = `/assets/audio/chatbot/${intentId}.mp3`;
-    const audio = new Audio(audioPath);
-    
-    // Safety check for browser voice fallback
-    const systemFallback = () => {
-      console.warn(`Local audio [${intentId}.mp3] missing, using system fallback.`);
-      if (!window.speechSynthesis) return;
-      const utterance = new SpeechSynthesisUtterance(text);
-      const selectedVoice = selectPreferredVoice(availableVoices);
-      if (selectedVoice) {
-        utterance.voice = selectedVoice;
-        utterance.lang = selectedVoice.lang;
-      }
-      utterance.rate = 1.1;
-      utterance.pitch = 0.95;
-      window.speechSynthesis.speak(utterance);
-    };
-
-    audio.oncanplaythrough = () => {
-      audioRef.current = audio;
-      audio.play().catch(systemFallback);
-    };
-
-    audio.onerror = systemFallback;
-  };
-
-  const clearActivePlayback = () => {
-    if (typingIntervalRef.current) {
-      window.clearInterval(typingIntervalRef.current);
-      typingIntervalRef.current = null;
-    }
-    if (thinkingTimeoutRef.current) {
-      window.clearTimeout(thinkingTimeoutRef.current);
-      thinkingTimeoutRef.current = null;
-    }
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current = null;
-    }
-    window.speechSynthesis?.cancel?.();
-  };
 
   const resolveIntent = (rawText = '') => {
     return resolvePortfolioIntent(rawText, knowledgeBase);
