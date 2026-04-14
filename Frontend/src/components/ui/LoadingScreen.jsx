@@ -4,19 +4,36 @@ import { preloadAllAssets } from '../../utils/assetLoader';
 
 const LoadingScreen = ({ onComplete }) => {
   const [progress, setProgress] = useState(0);
-  const [assetProgress, setAssetProgress] = useState(0);
   const [phase, setPhase] = useState('loading'); // 'loading' | 'revealing' | 'done'
   const rafRef = useRef(null);
   const startTimeRef = useRef(null);
   const isLoadedRef = useRef(false);
+  // Use a ref so the RAF loop always reads the latest asset progress without stale closure
+  const assetProgressRef = useRef(0);
 
   const LOAD_DURATION = 5000; // ms (Target 6 seconds)
   const REVEAL_DELAY = 400;
 
   useEffect(() => {
+    // Create a single shared AudioContext and resume it on the first user interaction
+    // to reliably bypass autoplay restrictions without leaking multiple contexts.
+    const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+    const audioCtx = AudioCtxClass ? new AudioCtxClass() : null;
+    const resumeAudioCtx = () => {
+      if (audioCtx) audioCtx.resume().catch(() => {});
+    };
+    if (audioCtx) {
+      // Attempt an immediate resume (succeeds when the page already had a gesture)
+      resumeAudioCtx();
+      window.addEventListener('click', resumeAudioCtx, { once: true });
+      window.addEventListener('touchstart', resumeAudioCtx, { once: true });
+      window.addEventListener('keydown', resumeAudioCtx, { once: true });
+    }
+
     // Start preloading assets immediately
     preloadAllAssets((p) => {
-      setAssetProgress(p);
+      // Write directly to the ref so the RAF callback always reads the latest value
+      assetProgressRef.current = p;
     }).then(() => {
       console.log('[LoadingScreen] Preload complete, setting isLoadedRef to true');
       isLoadedRef.current = true;
@@ -33,7 +50,7 @@ const LoadingScreen = ({ onComplete }) => {
       // This ensures we reach 100% at either the end of the duration or when assets are done,
       // but we wait at least LOAD_DURATION.
       const currentProgress = isLoadedRef.current 
-        ? Math.max(timeProgress, assetProgress) 
+        ? Math.max(timeProgress, assetProgressRef.current) 
         : Math.min(timeProgress, 99); // Cap at 99 if assets aren't done
 
       setProgress(currentProgress);
@@ -41,16 +58,6 @@ const LoadingScreen = ({ onComplete }) => {
       if (currentProgress < 100 || elapsed < LOAD_DURATION) {
         rafRef.current = requestAnimationFrame(animate);
       } else {
-        // Resume audio context on user interaction/finish to bypass autoplay blocks
-        const resumeAudio = () => {
-          const AudioContext = window.AudioContext || window.webkitAudioContext;
-          if (AudioContext) {
-            const ctx = new AudioContext();
-            ctx.resume();
-          }
-        };
-        resumeAudio();
-
         setPhase('revealing');
         setTimeout(() => {
           setPhase('done');
@@ -62,6 +69,12 @@ const LoadingScreen = ({ onComplete }) => {
     rafRef.current = requestAnimationFrame(animate);
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      if (audioCtx) {
+        window.removeEventListener('click', resumeAudioCtx);
+        window.removeEventListener('touchstart', resumeAudioCtx);
+        window.removeEventListener('keydown', resumeAudioCtx);
+        audioCtx.close().catch(() => {});
+      }
     };
   }, []);
 

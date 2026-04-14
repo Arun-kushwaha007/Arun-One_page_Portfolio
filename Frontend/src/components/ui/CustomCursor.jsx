@@ -17,7 +17,10 @@ const CustomCursor = () => {
     const handleResize = () => setIsDesktop(window.innerWidth >= 1024);
     window.addEventListener('resize', handleResize);
 
-    if (!isDesktop) return;
+    if (!isDesktop) {
+      // Always clean up the resize listener even when not on desktop
+      return () => window.removeEventListener('resize', handleResize);
+    }
 
     const moveCursor = (e) => {
       cursorX.set(e.clientX);
