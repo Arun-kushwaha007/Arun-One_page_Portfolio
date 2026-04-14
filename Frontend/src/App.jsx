@@ -9,6 +9,7 @@ import Experience from './components/Experience';
 import Projects from './components/Projects';
 import Skills from './components/Skills';
 import Contact from './components/Contact';
+import PortfolioChatbot from './components/chatbot/PortfolioChatbot';
 import Footer from './components/Footer';
 import CustomCursor from './components/ui/CustomCursor';
 import CyberpunkOverlay from './components/ui/CyberpunkOverlay';
@@ -25,6 +26,7 @@ function App() {
   const konamiTriggered = useKonamiCode();
   const [showChaos, setShowChaos] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   useEffect(() => {
     if (konamiTriggered) {
@@ -32,36 +34,80 @@ function App() {
     }
   }, [konamiTriggered]);
 
+  useEffect(() => {
+    if (!isChatOpen) {
+      return undefined;
+    }
+
+    const { body } = document;
+    const scrollY = window.scrollY;
+    const previousStyles = {
+      overflow: body.style.overflow,
+      position: body.style.position,
+      top: body.style.top,
+      width: body.style.width,
+    };
+
+    body.style.overflow = 'hidden';
+    body.style.position = 'fixed';
+    body.style.top = `-${scrollY}px`;
+    body.style.width = '100%';
+
+    return () => {
+      body.style.overflow = previousStyles.overflow;
+      body.style.position = previousStyles.position;
+      body.style.top = previousStyles.top;
+      body.style.width = previousStyles.width;
+      window.scrollTo(0, scrollY);
+    };
+  }, [isChatOpen]);
+
   return (
     <CursorProvider>
       <MatrixProvider>
         <SmoothScroll>
           <div className="min-h-screen text-white selection:bg-blue-500/30 relative z-0">
-          <AnimatePresence mode="wait">
-            {isLoading && (
-              <LoadingScreen onComplete={() => setIsLoading(false)} />
-            )}
-          </AnimatePresence>
+            <AnimatePresence mode="wait">
+              {isLoading && (
+                <LoadingScreen onComplete={() => setIsLoading(false)} />
+              )}
+            </AnimatePresence>
 
-          <CustomCursor />
-          <CyberpunkOverlay />
-          <MatrixRain />
-          <GlitchChaos triggered={showChaos} onComplete={() => setShowChaos(false)} />
-          <TerminalCLI />
-          <Background3D />
-          <Navbar />
-          
-          <main>
-            <Hero />
-            <About />
-            <Experience />
-            <Projects />
-            <Skills />
-            <Contact />
-          </main>
+            <div
+              inert={isChatOpen}
+              aria-hidden={isChatOpen}
+              className={`relative transition-all duration-300 ${
+                isChatOpen ? 'pointer-events-none select-none blur-md scale-[0.99]' : ''
+              }`}
+            >
+              <CustomCursor />
+              <CyberpunkOverlay />
+              <MatrixRain />
+              <GlitchChaos triggered={showChaos} onComplete={() => setShowChaos(false)} />
+              <TerminalCLI />
+              <Background3D />
+              <Navbar />
+              
+              <main>
+                <Hero />
+                <About />
+                <Experience />
+                <Projects />
+                <Skills />
+                <Contact />
+              </main>
 
-          <Footer />
-        </div>
+              <Footer />
+            </div>
+
+            <AnimatePresence>
+              {isChatOpen && (
+                <div className="pointer-events-auto fixed inset-0 z-[125] bg-slate-950/55 backdrop-blur-md" />
+              )}
+            </AnimatePresence>
+
+            <PortfolioChatbot isOpen={isChatOpen} onOpenChange={setIsChatOpen} />
+          </div>
         </SmoothScroll>
       </MatrixProvider>
     </CursorProvider>

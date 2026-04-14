@@ -84,11 +84,17 @@ body {
     ),
     radial-gradient(circle at 100% 50%, #0a0a0a 0%, transparent 30%);
   color: white;
-  cursor: none; /* Hide default cursor for custom one */
   overflow-x: hidden;
   letter-spacing: -0.01em;
   line-height: 1.6;
 }
+
+@media (min-width: 1024px) {
+  body {
+    cursor: none; /* Hide default cursor for custom one on desktop */
+  }
+}
+
 
 h1,
 h2,

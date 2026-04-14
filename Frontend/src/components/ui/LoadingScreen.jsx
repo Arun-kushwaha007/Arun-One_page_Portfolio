@@ -1,25 +1,61 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
+import { preloadAllAssets } from '../../utils/assetLoader';
 
 const LoadingScreen = ({ onComplete }) => {
   const [progress, setProgress] = useState(0);
   const [phase, setPhase] = useState('loading'); // 'loading' | 'revealing' | 'done'
   const rafRef = useRef(null);
   const startTimeRef = useRef(null);
-  const videoRef = useRef(null);
+  const isLoadedRef = useRef(false);
+  // Use a ref so the RAF loop always reads the latest asset progress without stale closure
+  const assetProgressRef = useRef(0);
 
-  const LOAD_DURATION = 3200; // ms
+  const LOAD_DURATION = 5000; // ms (Target 6 seconds)
   const REVEAL_DELAY = 400;
 
   useEffect(() => {
+    // Create a single shared AudioContext and resume it on the first user interaction
+    // to reliably bypass autoplay restrictions without leaking multiple contexts.
+    const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+    const audioCtx = AudioCtxClass ? new AudioCtxClass() : null;
+    const resumeAudioCtx = () => {
+      if (audioCtx) audioCtx.resume().catch(() => {});
+    };
+    if (audioCtx) {
+      // Attempt an immediate resume (succeeds when the page already had a gesture)
+      resumeAudioCtx();
+      window.addEventListener('click', resumeAudioCtx, { once: true });
+      window.addEventListener('touchstart', resumeAudioCtx, { once: true });
+      window.addEventListener('keydown', resumeAudioCtx, { once: true });
+    }
+
+    // Start preloading assets immediately
+    preloadAllAssets((p) => {
+      // Write directly to the ref so the RAF callback always reads the latest value
+      assetProgressRef.current = p;
+    }).then(() => {
+      console.log('[LoadingScreen] Preload complete, setting isLoadedRef to true');
+      isLoadedRef.current = true;
+    });
+
     const animate = (timestamp) => {
       if (!startTimeRef.current) startTimeRef.current = timestamp;
       const elapsed = timestamp - startTimeRef.current;
-      const pct = Math.min((elapsed / LOAD_DURATION) * 100, 100);
+      
+      // Calculate time-based progress
+      const timeProgress = Math.min((elapsed / LOAD_DURATION) * 100, 100);
+      
+      // Combined progress: we follow the actual asset loading but don't finish before LOAD_DURATION
+      // This ensures we reach 100% at either the end of the duration or when assets are done,
+      // but we wait at least LOAD_DURATION.
+      const currentProgress = isLoadedRef.current 
+        ? Math.max(timeProgress, assetProgressRef.current) 
+        : Math.min(timeProgress, 99); // Cap at 99 if assets aren't done
 
-      setProgress(pct);
+      setProgress(currentProgress);
 
-      if (pct < 100) {
+      if (currentProgress < 100 || elapsed < LOAD_DURATION) {
         rafRef.current = requestAnimationFrame(animate);
       } else {
         setPhase('revealing');
@@ -33,16 +69,15 @@ const LoadingScreen = ({ onComplete }) => {
     rafRef.current = requestAnimationFrame(animate);
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      if (audioCtx) {
+        window.removeEventListener('click', resumeAudioCtx);
+        window.removeEventListener('touchstart', resumeAudioCtx);
+        window.removeEventListener('keydown', resumeAudioCtx);
+        audioCtx.close().catch(() => {});
+      }
     };
   }, []);
 
-  // Accelerate video playback as progress increases (0.5x → 4x)
-  useEffect(() => {
-    if (videoRef.current) {
-      const speed = 0.5 + (progress / 100) * 3.5;
-      videoRef.current.playbackRate = Math.min(speed, 4);
-    }
-  }, [progress]);
 
   // SVG circle params
   const radius = 62;
@@ -56,22 +91,25 @@ const LoadingScreen = ({ onComplete }) => {
       exit={{ opacity: 0 }}
       transition={{ duration: 0.8, ease: 'easeInOut' }}
     >
-      {/* Background Video */}
-      <video
-        ref={videoRef}
-        autoPlay
-        loop
-        muted
-        playsInline
+      {/* Background GIF with Dynamic Energy Effects */}
+      <motion.img
         className="absolute inset-0 w-full h-full object-cover"
-        src="/assets/loader-video.mp4"
+        src="/assets/loader-video.gif"
+        alt="Loading background"
+        style={{
+          filter: `brightness(${0.8 + (progress / 100) * 0.5}) contrast(${1 + (progress / 100) * 0.3})`,
+          scale: 1 + (progress / 100) * 0.1,
+          x: progress > 50 ? (Math.random() - 0.5) * (progress - 50) * 0.1 : 0,
+          y: progress > 50 ? (Math.random() - 0.5) * (progress - 50) * 0.1 : 0,
+        }}
+        transition={{ type: 'spring', stiffness: 1000, damping: 10 }}
       />
 
-      {/* Vignette overlay — darkens center for UI readability */}
+      {/* Optimized Vignette overlay — lighter center for vibrancy */}
       <div
         className="absolute inset-0"
         style={{
-          background: 'radial-gradient(circle at center, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.35) 25%, rgba(0,0,0,0.15) 45%, rgba(0,0,0,0.6) 100%)',
+          background: 'radial-gradient(circle at center, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.2) 25%, rgba(0,0,0,0.1) 45%, rgba(0,0,0,0.7) 100%)',
         }}
       />
 

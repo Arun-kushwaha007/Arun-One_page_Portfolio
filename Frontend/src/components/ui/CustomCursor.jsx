@@ -1,9 +1,11 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { motion as Motion, useMotionValue, useSpring, AnimatePresence } from 'framer-motion';
 import { useCursor } from '../../context/CursorContext.jsx';
 
 const CustomCursor = () => {
   const { cursorType, setCursorType } = useCursor();
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
+  
   const cursorX = useMotionValue(-100);
   const cursorY = useMotionValue(-100);
   
@@ -12,6 +14,14 @@ const CustomCursor = () => {
   const cursorYSpring = useSpring(cursorY, springConfig);
 
   useEffect(() => {
+    const handleResize = () => setIsDesktop(window.innerWidth >= 1024);
+    window.addEventListener('resize', handleResize);
+
+    if (!isDesktop) {
+      // Always clean up the resize listener even when not on desktop
+      return () => window.removeEventListener('resize', handleResize);
+    }
+
     const moveCursor = (e) => {
       cursorX.set(e.clientX);
       cursorY.set(e.clientY);
@@ -44,19 +54,20 @@ const CustomCursor = () => {
     window.addEventListener('mouseout', handleMouseOut);
 
     return () => {
+      window.removeEventListener('resize', handleResize);
       window.removeEventListener('mousemove', moveCursor);
       window.removeEventListener('mouseover', handleMouseOver);
       window.removeEventListener('mouseout', handleMouseOut);
     };
-  }, [cursorX, cursorY, cursorType, setCursorType]);
+  }, [cursorX, cursorY, cursorType, setCursorType, isDesktop]);
+
+  if (!isDesktop) return null;
 
   const variants = {
     default: {
       height: 16,
       width: 16,
       backgroundColor: "#00f3ff", // neon-blue
-      x: -8,
-      y: -8,
       mixBlendMode: "difference"
     },
     button: {
@@ -64,16 +75,12 @@ const CustomCursor = () => {
       width: 64,
       backgroundColor: "rgba(255, 255, 255, 0.1)",
       border: "1px solid #00f3ff",
-      x: -32,
-      y: -32,
       mixBlendMode: "normal"
     },
     text: {
       height: 32,
       width: 4,
       backgroundColor: "#bc13fe", // neon-purple
-      x: -2,
-      y: -16,
       borderRadius: 0,
       mixBlendMode: "difference"
     },
@@ -82,8 +89,6 @@ const CustomCursor = () => {
         width: 100,
         backgroundColor: "rgba(0, 243, 255, 0.1)",
         border: "1px solid rgba(0, 243, 255, 0.5)",
-        x: -50,
-        y: -50,
         mixBlendMode: "normal"
     }
   };
@@ -91,10 +96,10 @@ const CustomCursor = () => {
   return (
     <>
       <Motion.div
-        className="fixed top-0 left-0 rounded-full pointer-events-none z-[9999] flex items-center justify-center backdrop-blur-sm"
+        className="fixed top-0 left-0 rounded-full pointer-events-none z-[9999] flex items-center justify-center backdrop-blur-sm -translate-x-1/2 -translate-y-1/2"
         style={{
-          translateX: cursorXSpring,
-          translateY: cursorYSpring,
+          x: cursorXSpring,
+          y: cursorYSpring,
         }}
         variants={variants}
         animate={cursorType}
@@ -113,7 +118,6 @@ const CustomCursor = () => {
             )}
             {cursorType === 'button' && (
                 <Motion.div
-                    layoutId="cursor-ring"
                     className="absolute inset-0 border border-neon-blue rounded-full opacity-50"
                     animate={{ scale: [1, 1.2, 1] }} // Pulse
                     transition={{ repeat: Infinity, duration: 1.5 }}
@@ -125,12 +129,10 @@ const CustomCursor = () => {
       {/* Secondary trailing dot */}
       {cursorType === 'default' && (
           <Motion.div 
-            className="fixed top-0 left-0 w-2 h-2 bg-neon-purple rounded-full pointer-events-none z-[9999]"
+            className="fixed top-0 left-0 w-2 h-2 bg-neon-purple rounded-full pointer-events-none z-[9999] -translate-x-1/2 -translate-y-1/2"
             style={{
-                translateX: cursorX,
-                translateY: cursorY,
-                x: -1,
-                y: -1
+                x: cursorX,
+                y: cursorY,
             }}
             transition={{ type: "spring", mass: 0.1 }}
           />
