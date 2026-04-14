@@ -20,9 +20,10 @@ const SmoothScroll = ({ children }) => {
       requestAnimationFrame(raf)
     }
 
-    requestAnimationFrame(raf)
+    const rafId = requestAnimationFrame(raf)
 
     return () => {
+      cancelAnimationFrame(rafId)
       lenis.destroy()
     }
   }, [])

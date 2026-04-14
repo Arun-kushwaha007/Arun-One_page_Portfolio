@@ -60,11 +60,12 @@ export default function PortfolioChatbot({ isOpen, onOpenChange }) {
   const audioRef = useRef(null);
   const openingAudioTimeoutRef = useRef(null);
   const frameRef = useRef(0);
+  const hasPlayedIntroRef = useRef(false);
   const [isReady, setIsReady] = useState(false);
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const [characterMode, setCharacterMode] = useState('bot'); // 'bot' or 'hero'
 
-  const isBotSpeaking = useMemo(() => isThinking || messages.some((m) => m.isTyping) || isAudioPlaying, [isThinking, messages, isAudioPlaying]);
+  const isBotSpeaking = useMemo(() => isThinking || isAudioPlaying, [isThinking, isAudioPlaying]);
 
   const clearActivePlayback = useCallback(() => {
     if (typingIntervalRef.current) {
@@ -109,6 +110,9 @@ export default function PortfolioChatbot({ isOpen, onOpenChange }) {
       };
       utterance.onend = () => setIsAudioPlaying(false);
       utterance.onerror = () => setIsAudioPlaying(false);
+
+      // Fix for Chrome GC bug: hold a global reference to the utterance
+      window.__chatUtterance = utterance;
 
       window.speechSynthesis.speak(utterance);
     };
@@ -161,6 +165,19 @@ export default function PortfolioChatbot({ isOpen, onOpenChange }) {
     }
   }, [voiceEnabled, availableVoices, clearActivePlayback]);
 
+  // Immediately kill any currently playing audio if the user clicks Mute
+  // But do NOT kill the typing interval — let the text finish rendering
+  useEffect(() => {
+    if (!voiceEnabled) {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+      window.speechSynthesis?.cancel?.();
+      setIsAudioPlaying(false);
+    }
+  }, [voiceEnabled]);
+
   const handleClose = useCallback(() => {
     if (isClosing) return;
     setIsClosing(true);
@@ -207,18 +224,24 @@ export default function PortfolioChatbot({ isOpen, onOpenChange }) {
       setCharacterMode('bot'); // Always start as bot
       if (isReady) drawFrame(0, 'bot');
       
-      // Play global opening voice with a 2-second delay
-      openingAudioTimeoutRef.current = window.setTimeout(() => {
-        speakReply("Hello, I am your digital assistant. How can I help you today?", "bot-open");
-      }, 2000);
+      // Play intro audio ONLY on first open, not on mute/unmute toggles
+      if (!hasPlayedIntroRef.current) {
+        hasPlayedIntroRef.current = true;
+        openingAudioTimeoutRef.current = window.setTimeout(() => {
+          speakReply("Hello, I am your digital assistant. How can I help you today?", "bot-open");
+        }, 2000);
+      }
     } else {
       // Clear timeout if closed early
       if (openingAudioTimeoutRef.current) {
         window.clearTimeout(openingAudioTimeoutRef.current);
         openingAudioTimeoutRef.current = null;
       }
+      // Reset intro flag so it plays again on next open
+      hasPlayedIntroRef.current = false;
     }
-  }, [isOpen, isReady, drawFrame, speakReply]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, isReady, drawFrame]);
 
   // Frame animation loop
   useEffect(() => {

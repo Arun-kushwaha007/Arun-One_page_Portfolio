@@ -63,7 +63,7 @@ export const preloadAllAssets = (onProgress) => {
     return Array.from({ length: set.count }, (_, i) => {
       return new Promise((resolve) => {
         const img = new Image();
-        img.src = `/assets/${set.folder}/${String(i + 1).padStart(2, '0')} - Edited.png`;
+        img.src = `/assets/${set.folder}/${String(i + 1).padStart(2, '0')} - Edited.webp`;
         img.onload = () => {
           assetCache[set.key][i] = img;
           updateProgress();

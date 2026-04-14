@@ -1,41 +1,36 @@
 import { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { preloadAllAssets } from '../../utils/assetLoader';
 
 const LoadingScreen = ({ onComplete }) => {
   const [progress, setProgress] = useState(0);
-  const [phase, setPhase] = useState('loading'); // 'loading' | 'revealing' | 'done'
+  const [phase, setPhase] = useState('loading'); // 'loading' | 'ready' | 'revealing' | 'done'
   const rafRef = useRef(null);
   const startTimeRef = useRef(null);
   const isLoadedRef = useRef(false);
-  // Use a ref so the RAF loop always reads the latest asset progress without stale closure
   const assetProgressRef = useRef(0);
 
-  const LOAD_DURATION = 5000; // ms (Target 6 seconds)
+  const LOAD_DURATION = 5000; // Reduced from 5000ms
   const REVEAL_DELAY = 400;
 
   useEffect(() => {
-    // Create a single shared AudioContext and resume it on the first user interaction
-    // to reliably bypass autoplay restrictions without leaking multiple contexts.
+    // Audio Context Setup
     const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
     const audioCtx = AudioCtxClass ? new AudioCtxClass() : null;
     const resumeAudioCtx = () => {
       if (audioCtx) audioCtx.resume().catch(() => {});
     };
     if (audioCtx) {
-      // Attempt an immediate resume (succeeds when the page already had a gesture)
-      resumeAudioCtx();
       window.addEventListener('click', resumeAudioCtx, { once: true });
       window.addEventListener('touchstart', resumeAudioCtx, { once: true });
       window.addEventListener('keydown', resumeAudioCtx, { once: true });
     }
 
-    // Start preloading assets immediately
+    // Preload assets
     preloadAllAssets((p) => {
-      // Write directly to the ref so the RAF callback always reads the latest value
       assetProgressRef.current = p;
     }).then(() => {
-      console.log('[LoadingScreen] Preload complete, setting isLoadedRef to true');
+      console.log('[LoadingScreen] All assets loaded');
       isLoadedRef.current = true;
     });
 
@@ -43,21 +38,24 @@ const LoadingScreen = ({ onComplete }) => {
       if (!startTimeRef.current) startTimeRef.current = timestamp;
       const elapsed = timestamp - startTimeRef.current;
       
-      // Calculate time-based progress
       const timeProgress = Math.min((elapsed / LOAD_DURATION) * 100, 100);
       
-      // Combined progress: we follow the actual asset loading but don't finish before LOAD_DURATION
-      // This ensures we reach 100% at either the end of the duration or when assets are done,
-      // but we wait at least LOAD_DURATION.
-      const currentProgress = isLoadedRef.current 
-        ? Math.max(timeProgress, assetProgressRef.current) 
-        : Math.min(timeProgress, 99); // Cap at 99 if assets aren't done
+      // Ensure progress takes the full 5 seconds to reach 100
+      let currentProgress;
+      if (isLoadedRef.current) {
+        // Assets are ready, but we pace the percentage with the timer
+        currentProgress = timeProgress;
+      } else {
+        // Pacing with timer, but hold at 99% if assets aren't done
+        currentProgress = Math.min(timeProgress, 99);
+      }
 
       setProgress(currentProgress);
 
       if (currentProgress < 100 || elapsed < LOAD_DURATION) {
         rafRef.current = requestAnimationFrame(animate);
       } else {
+        // Instead of auto-revealing, we can show a "Ready" state or auto-proceed
         setPhase('revealing');
         setTimeout(() => {
           setPhase('done');
@@ -69,12 +67,9 @@ const LoadingScreen = ({ onComplete }) => {
     rafRef.current = requestAnimationFrame(animate);
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      if (audioCtx) {
-        window.removeEventListener('click', resumeAudioCtx);
-        window.removeEventListener('touchstart', resumeAudioCtx);
-        window.removeEventListener('keydown', resumeAudioCtx);
-        audioCtx.close().catch(() => {});
-      }
+      window.removeEventListener('click', resumeAudioCtx);
+      window.removeEventListener('touchstart', resumeAudioCtx);
+      window.removeEventListener('keydown', resumeAudioCtx);
     };
   }, []);
 
@@ -91,19 +86,22 @@ const LoadingScreen = ({ onComplete }) => {
       exit={{ opacity: 0 }}
       transition={{ duration: 0.8, ease: 'easeInOut' }}
     >
-      {/* Background GIF with Dynamic Energy Effects */}
-      <motion.img
-        className="absolute inset-0 w-full h-full object-cover"
-        src="/assets/loader-video.gif"
-        alt="Loading background"
-        style={{
-          filter: `brightness(${0.8 + (progress / 100) * 0.5}) contrast(${1 + (progress / 100) * 0.3})`,
-          scale: 1 + (progress / 100) * 0.1,
-          x: progress > 50 ? (Math.random() - 0.5) * (progress - 50) * 0.1 : 0,
-          y: progress > 50 ? (Math.random() - 0.5) * (progress - 50) * 0.1 : 0,
-        }}
-        transition={{ type: 'spring', stiffness: 1000, damping: 10 }}
-      />
+      {/* Background Video/GIF with Dynamic Energy Effects */}
+      <div className="absolute inset-0 w-full h-full overflow-hidden">
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="w-full h-full object-cover"
+          style={{
+            filter: `brightness(${0.8 + (progress / 100) * 0.5}) contrast(${1 + (progress / 100) * 0.3})`,
+            transform: `scale(${1 + (progress / 100) * 0.1})`,
+          }}
+        >
+          <source src="/assets/loader-video.mp4" type="video/mp4" />
+        </video>
+      </div>
 
       {/* Optimized Vignette overlay — lighter center for vibrancy */}
       <div
