@@ -1,18 +1,12 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
-import { AnimatePresence, motion, LayoutGroup } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { 
   Mic, 
   MicOff, 
-  SendHorizonal, 
-  Sparkles, 
+  SendHorizontal, 
   X, 
-  Terminal, 
   Activity, 
   Command,
-  Cpu,
-  Layers,
-  Zap,
-  ShieldCheck,
   Bot
 } from 'lucide-react';
 // import { profile } from '../../data/portfolio';
@@ -53,7 +47,6 @@ export default function PortfolioChatbot({ isOpen, onOpenChange }) {
 
   const [messages, setMessages] = useState([welcomeMessage]);
   const [promptIds, setPromptIds] = useState(knowledgeBase.defaultPromptIds);
-  const [reaction, setReaction] = useState('idle');
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [draft, setDraft] = useState('');
   const [isThinking, setIsThinking] = useState(false);
@@ -245,7 +238,6 @@ export default function PortfolioChatbot({ isOpen, onOpenChange }) {
           onOpenChange(false);
           setMessages([welcomeMessage]);
           setPromptIds(knowledgeBase.defaultPromptIds);
-          setReaction('idle');
           setIsThinking(false);
           setDraft('');
           clearInterval(interval);
@@ -364,7 +356,6 @@ export default function PortfolioChatbot({ isOpen, onOpenChange }) {
   const typeBotReply = (intent) => {
     clearActivePlayback();
     setIsThinking(true);
-    setReaction('thinking');
 
     thinkingTimeoutRef.current = window.setTimeout(() => {
       setIsThinking(false);
@@ -372,7 +363,6 @@ export default function PortfolioChatbot({ isOpen, onOpenChange }) {
       if (intent.action === 'CLEAR_CHAT') {
         setMessages([welcomeMessage]);
         setPromptIds(knowledgeBase.defaultPromptIds);
-        setReaction('idle');
         return;
       }
 
@@ -380,7 +370,6 @@ export default function PortfolioChatbot({ isOpen, onOpenChange }) {
       let nextIndex = 0;
 
       setMessages((current) => [...current, botMessage]);
-      setReaction(intent.reaction);
       setPromptIds(intent.followUps);
 
       // START AUDIO IMMEDIATELY with the answer
@@ -602,7 +591,7 @@ export default function PortfolioChatbot({ isOpen, onOpenChange }) {
                           type="submit"
                           className="flex h-10 w-10 items-center justify-center text-white/40 hover:text-cyan-400 transition-colors"
                         >
-                          <SendHorizonal className="h-6 w-6" />
+                          <SendHorizontal className="h-6 w-6" />
                         </button>
                     </div>
                   </form>
