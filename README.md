@@ -1,95 +1,123 @@
-<!-- // ...existing code... -->
-# Arun-One_page_Portfolio
+# Arun One Page Portfolio
 
-A single-page portfolio site built with React + Vite showcasing projects, skills, experience, and contact information.
+Cyberpunk-styled portfolio built with React and Vite. The site presents Arun Kushwaha's profile, experience, projects, skills, contact details, and a set of interactive UI systems including a browser terminal, chatbot assistant, animated overlays, and a Matrix-style easter egg.
 
-## Overview
+## What This Repo Contains
 
-This repository contains a front-end React application (Vite) that renders a responsive portfolio site with animated UI, a starfield background, project lightboxes, and accessible layout.
+This repository is centered on the `Frontend/` app:
+
+- `Frontend/src/App.jsx` wires the full one-page experience together.
+- `Frontend/src/data/portfolio.js` holds the portfolio content model.
+- `Frontend/src/components/` contains the page sections and interactive UI modules.
+- `Frontend/src/components/chatbot/` contains the portfolio assistant, intent resolution, and voice helpers.
+- `Frontend/public/assets/` stores images, avatar frames, and chatbot audio assets.
+
+## Feature Highlights
+
+- Single-page portfolio with hero, about, experience, projects, skills, contact, and footer sections
+- Animated cyberpunk presentation with overlays, custom cursor, glitch effects, and Matrix rain
+- Embedded `TerminalCLI` component for terminal-style interaction
+- `PortfolioChatbot` with typed responses, intent-based replies, optional voice playback, and animated avatars
+- Smooth scrolling and layered visual effects powered by Framer Motion, Tailwind CSS v4, and React 19
+- Data-driven content so most profile updates can be made from a single source file
 
 ## Tech Stack
 
-- React
-- Vite
-- Tailwind CSS
+- React 19
+- Vite 7
+- Tailwind CSS 4
 - Framer Motion
-- Lucide icons
-- (optional) three.js / @react-three/fiber + @react-three/drei for advanced visuals
+- Lucide React
+- Three.js with `@react-three/fiber` and `@react-three/drei`
+- ESLint
 
-## Project Structure
-
-Frontend/
-- index.html
-- vite.config.js
-- package.json
-- public/ (static assets such as images)
-- src/
-  - main.jsx         — app entry
-  - App.jsx          — main Portfolio component
-  - components/
-    - Stars.jsx      — starfield / background component
-  - assets/          — imported images used by the site
-  - index.css        — Tailwind imports and global styles
-
-## Getting started (local development)
+## Local Development
 
 Prerequisites:
-- Node.js (v16+ recommended)
-- npm (or yarn / pnpm)
 
-Steps:
+- Node.js 18+ recommended
+- npm
 
-1. Open a terminal and change to the Frontend folder:
-```sh
+Install and run:
+
+```bash
 cd Frontend
-```
-
-2. Install dependencies:
-```sh
 npm install
-# or
-# pnpm install
-# yarn
-```
-
-3. Start the dev server:
-```sh
 npm run dev
 ```
-- Vite serves the app (default: http://localhost:5173).
 
-4. Build for production:
-```sh
+Production build:
+
+```bash
+cd Frontend
 npm run build
-```
-
-5. Preview the production build locally:
-```sh
 npm run preview
 ```
 
-## Helpful commands
+Lint:
 
-- Start dev server: npm run dev
-- Build production: npm run build
-- Preview build: npm run preview
-- Lint (if configured): npm run lint
+```bash
+cd Frontend
+npm run lint
+```
 
-## Notes & Tips
+## Tests
 
-- Static assets are located under Frontend/public and Frontend/src/assets. Use the public folder for files served at root (e.g., /assets/arunsk.jpg).
-- If you encounter "ENOSPC: System limit for number of file watchers reached" when running Vite on Linux, increase inotify watchers or exclude folders in your editor:
-  - Temporary increase: sudo sysctl -w fs.inotify.max_user_watches=524288
-  - Persist: echo "fs.inotify.max_user_watches=524288" | sudo tee /etc/sysctl.d/99-inotify.conf && sudo sysctl --system
-  - Or exclude large folders (node_modules, .git, assets) in VS Code's files.watcherExclude.
-- Tailwind is configured via the project's CSS and Vite plugin (see vite.config.js). Make sure PostCSS/Tailwind setup is intact if styles don't load.
-- App entry point: src/main.jsx mounts App.jsx (the Portfolio component).
+The repo currently includes focused Node-based tests for the chatbot knowledge and voice-selection utilities:
 
-## Deployment
+```bash
+cd Frontend
+node src/components/chatbot/data/chatbotKnowledge.test.js
+node src/components/chatbot/data/chatbotVoice.test.js
+```
 
-Build the project (npm run build) and deploy the contents of the `dist` directory to any static host (Vercel, Netlify, GitHub Pages, or an Azure Static Web App). For Azure deployments, follow Azure Static Web Apps best practices and CI/CD steps (configure build command and output directory to `dist`).
+These are not yet wired into an npm script, so they are run directly with Node.
 
-## Credits
+## Updating Portfolio Content
 
-Built by Arun Kushwaha.
+Most portfolio copy and structured content live in:
 
+- `Frontend/src/data/portfolio.js`
+
+Use that file to update:
+
+- hero content
+- profile summary
+- social links
+- skills
+- experience
+- projects
+- education
+
+Interactive assistant responses are derived from the chatbot data layer under:
+
+- `Frontend/src/components/chatbot/data/`
+
+## Project Structure
+
+```text
+.
+|-- README.md
+|-- LEARN.md
+|-- CONTRIBUTOR.md
+`-- Frontend
+    |-- package.json
+    |-- public
+    |   `-- assets
+    `-- src
+        |-- App.jsx
+        |-- data
+        |   `-- portfolio.js
+        |-- components
+        |-- context
+        |-- hooks
+        `-- utils
+```
+
+## Contribution Notes
+
+Arun Kushwaha is the primary author and maintainer of this project. If you want to report an issue or contribute a fix, follow the process documented in [CONTRIBUTOR.md](/D:/ak/New%20folder/Arun-One_page_Portfolio/CONTRIBUTOR.md).
+
+## License
+
+This project is released under the [MIT License](/D:/ak/New%20folder/Arun-One_page_Portfolio/LICENSE).
