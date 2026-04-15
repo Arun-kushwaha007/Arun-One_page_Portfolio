@@ -11,9 +11,9 @@ export default defineConfig({
       output: {
         manualChunks: {
           'vendor-react': ['react', 'react-dom'],
-          'vendor-three': ['three', '@react-three/fiber', '@react-three/drei'],
+          'vendor-three': ['three', '@react-three/fiber', '@react-three/drei', 'maath'],
           'vendor-motion': ['framer-motion'],
-          'vendor-utils': ['lenis', 'lucide-react', 'maath'],
+          'vendor-utils': ['lenis', 'lucide-react'],
         },
       },
     },
