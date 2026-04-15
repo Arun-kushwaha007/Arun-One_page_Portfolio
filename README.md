@@ -1,6 +1,10 @@
 # Arun One Page Portfolio
 
+[![Live Demo: arunkushwaha.xyz](https://img.shields.io/badge/Live%20Demo-arunkushwaha.xyz-ff00ff?style=for-the-badge&logo=google-chrome&logoColor=white)](https://arunkushwaha.xyz)
+
 Cyberpunk-styled portfolio built with React and Vite. The site presents Arun Kushwaha's profile, experience, projects, skills, contact details, and a set of interactive UI systems including a browser terminal, chatbot assistant, animated overlays, and a Matrix-style easter egg.
+
+![Portfolio Demo](Frontend/public/portfolio.gif)
 
 ## What This Repo Contains
 
