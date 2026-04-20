@@ -1,15 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=%VITE_GTAG_ID%"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-
-      gtag('config', '%VITE_GTAG_ID%');
-    </script>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
@@ -71,15 +62,55 @@
       }
     </script>
 
+    <!-- Fonts: preconnect early, load non-blocking -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
+      rel="preload"
+      as="style"
       href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap"
-      rel="stylesheet"
+      onload="this.onload=null;this.rel='stylesheet'"
     />
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
   </head>
   <body>
+    <!-- Inline critical styles so browser paints immediately, before JS loads -->
+    <style>
+      body { margin: 0; background: #020202; }
+      #root { min-height: 100vh; }
+      /* Pre-render loading screen so FCP fires early */
+      #initial-loader {
+        position: fixed; inset: 0; z-index: 9999;
+        background: #000;
+        display: flex; align-items: center; justify-content: center;
+        transition: opacity 0.3s;
+      }
+      #initial-loader .ring {
+        width: 80px; height: 80px;
+        border: 3px solid rgba(255,255,255,0.1);
+        border-top-color: #00f3ff;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+      @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+    <!-- HTML-only loader shown instantly, removed when React mounts -->
+    <div id="initial-loader"><div class="ring"></div></div>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+
+    <!-- Google Analytics: moved to end of body + deferred to avoid blocking FCP -->
+    <script defer src="https://www.googletagmanager.com/gtag/js?id=%VITE_GTAG_ID%"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', '%VITE_GTAG_ID%');
+    </script>
   </body>
 </html>

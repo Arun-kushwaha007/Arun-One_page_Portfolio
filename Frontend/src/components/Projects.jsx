@@ -47,6 +47,8 @@ const ProjectCard = ({ project, index, targetScale }) => {
             <img 
               src={project.image}
               alt={project.title}
+              loading="lazy"
+              decoding="async"
               className="w-full h-full object-cover transition-all duration-700 group-hover:scale-105 group-hover:brightness-110 grayscale-[10%] group-hover:grayscale-0"
             />
           </Motion.div>

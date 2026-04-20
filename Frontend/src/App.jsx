@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react';
-import Background3D from './components/Background3D';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import LoadingScreen from './components/ui/LoadingScreen';
 import { AnimatePresence } from 'framer-motion';
 import Navbar from './components/Navbar';
@@ -9,18 +8,24 @@ import Experience from './components/Experience';
 import Projects from './components/Projects';
 import Skills from './components/Skills';
 import Contact from './components/Contact';
-import PortfolioChatbot from './components/chatbot/PortfolioChatbot';
 import Footer from './components/Footer';
 import CustomCursor from './components/ui/CustomCursor';
 import CyberpunkOverlay from './components/ui/CyberpunkOverlay';
 import { MatrixProvider } from './context/MatrixContext';
 import { CursorProvider } from './context/CursorProvider';
-import MatrixRain from './components/ui/MatrixRain';
 import useKonamiCode from './hooks/useKonamiCode';
-import GlitchChaos from './components/ui/GlitchChaos';
-import TerminalCLI from './components/ui/TerminalCLI';
-
 import SmoothScroll from './components/ui/SmoothScroll';
+import { preloadDeferredAssets } from './utils/assetLoader';
+
+// ── Lazy-loaded heavy components ──
+// Three.js bundle (~500KB+) deferred from critical path
+const Background3D = lazy(() => import('./components/Background3D'));
+// Chatbot (~26KB source + triggers ~4MB chatbot avatar loading)
+const PortfolioChatbot = lazy(() => import('./components/chatbot/PortfolioChatbot'));
+// Non-critical overlays
+const MatrixRain = lazy(() => import('./components/ui/MatrixRain'));
+const GlitchChaos = lazy(() => import('./components/ui/GlitchChaos'));
+const TerminalCLI = lazy(() => import('./components/ui/TerminalCLI'));
 
 function App() {
   const konamiTriggered = useKonamiCode();
@@ -33,6 +38,17 @@ function App() {
       setShowChaos(true);
     }
   }, [konamiTriggered]);
+
+  // ── Start loading deferred assets (chatbot avatar + audio) after page loads ──
+  useEffect(() => {
+    if (!isLoading) {
+      // Small delay to let the main content settle first
+      const timer = setTimeout(() => {
+        preloadDeferredAssets();
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading]);
 
   useEffect(() => {
     if (!isChatOpen) {
@@ -82,10 +98,12 @@ function App() {
             >
               <CustomCursor />
               <CyberpunkOverlay />
-              <MatrixRain />
-              <GlitchChaos triggered={showChaos} onComplete={() => setShowChaos(false)} />
-              <TerminalCLI />
-              <Background3D />
+              <Suspense fallback={null}>
+                <MatrixRain />
+                <GlitchChaos triggered={showChaos} onComplete={() => setShowChaos(false)} />
+                <TerminalCLI />
+                <Background3D />
+              </Suspense>
               <Navbar />
               
               <main>
@@ -106,7 +124,9 @@ function App() {
               )}
             </AnimatePresence>
 
-            <PortfolioChatbot isOpen={isChatOpen} onOpenChange={setIsChatOpen} />
+            <Suspense fallback={null}>
+              <PortfolioChatbot isOpen={isChatOpen} onOpenChange={setIsChatOpen} />
+            </Suspense>
           </div>
         </SmoothScroll>
       </MatrixProvider>

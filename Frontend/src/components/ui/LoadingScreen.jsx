@@ -10,7 +10,7 @@ const LoadingScreen = ({ onComplete }) => {
   const isLoadedRef = useRef(false);
   const assetProgressRef = useRef(0);
 
-  const LOAD_DURATION = 5000; // Reduced from 5000ms
+  const LOAD_DURATION = 2000; // Optimized: 2s is enough for critical assets
   const REVEAL_DELAY = 400;
 
   useEffect(() => {

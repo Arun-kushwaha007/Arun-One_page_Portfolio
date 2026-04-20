@@ -1,6 +1,8 @@
 /**
  * Centralized Asset Loader for the Portfolio
- * Preloads image sequences for animations and audio files for the chatbot
+ * 
+ * Phase 1 (Critical): heroIdle + heroMove — loaded during loading screen
+ * Phase 2 (Deferred): chatbotAvatar + audio — loaded after page renders
  */
 
 export const assetCache = {
@@ -9,6 +11,7 @@ export const assetCache = {
   chatbotAvatar: [],
   audio: {},
   isLoaded: false,
+  isChatAssetsLoaded: false,
   progress: 0,
   listeners: [],
 };
@@ -17,9 +20,14 @@ const notifyListeners = () => {
   assetCache.listeners.forEach(cb => cb());
 };
 
-const IMAGE_SETS = [
+// ── Critical image sets: loaded during loading screen ──
+const CRITICAL_IMAGE_SETS = [
   { key: 'heroIdle', folder: 'avatar', count: 30 },
   { key: 'heroMove', folder: 'avatar-move', count: 50 },
+];
+
+// ── Deferred image sets: loaded after page renders ──
+const DEFERRED_IMAGE_SETS = [
   { key: 'chatbotAvatar', folder: 'avatar-chat-bot', count: 50 },
 ];
 
@@ -44,73 +52,93 @@ const AUDIO_FILES = [
   'project-resqterra',
 ];
 
+/**
+ * Load a set of image sequences into the cache
+ */
+const loadImageSet = (set, onProgress) => {
+  return Array.from({ length: set.count }, (_, i) => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.src = `/assets/${set.folder}/${String(i + 1).padStart(2, '0')} - Edited.webp`;
+      img.onload = () => {
+        assetCache[set.key][i] = img;
+        if (onProgress) onProgress();
+        resolve();
+      };
+      img.onerror = () => {
+        console.warn(`Failed to load image: ${img.src}`);
+        if (onProgress) onProgress();
+        resolve();
+      };
+    });
+  });
+};
+
+/**
+ * Phase 1: Preload critical assets (heroIdle + heroMove)
+ * Called during loading screen — blocks until complete
+ */
 export const preloadAllAssets = (onProgress) => {
   if (assetCache.isLoaded) return Promise.resolve();
 
-  const totalImages = IMAGE_SETS.reduce((sum, set) => sum + set.count, 0);
-  const totalAudio = AUDIO_FILES.length;
-  const totalItems = totalImages + totalAudio;
+  const totalImages = CRITICAL_IMAGE_SETS.reduce((sum, set) => sum + set.count, 0);
   let loadedItems = 0;
 
   const updateProgress = () => {
     loadedItems++;
-    const progress = Math.min((loadedItems / totalItems) * 100, 100);
+    const progress = Math.min((loadedItems / totalImages) * 100, 100);
     assetCache.progress = progress;
     if (onProgress) onProgress(progress);
   };
 
-  const imagePromises = IMAGE_SETS.flatMap((set) => {
-    return Array.from({ length: set.count }, (_, i) => {
-      return new Promise((resolve) => {
-        const img = new Image();
-        img.src = `/assets/${set.folder}/${String(i + 1).padStart(2, '0')} - Edited.webp`;
-        img.onload = () => {
-          assetCache[set.key][i] = img;
-          updateProgress();
-          resolve();
-        };
-        img.onerror = () => {
-          console.warn(`Failed to load image: ${img.src}`);
-          updateProgress();
-          resolve();
-        };
-      });
+  const imagePromises = CRITICAL_IMAGE_SETS.flatMap((set) => loadImageSet(set, updateProgress));
+
+  return Promise.all(imagePromises).then(() => {
+    console.log('[AssetLoader] Critical assets loaded:', {
+      idle: assetCache.heroIdle.filter(Boolean).length,
+      move: assetCache.heroMove.filter(Boolean).length,
     });
+    assetCache.isLoaded = true;
+    notifyListeners();
+    return assetCache;
   });
+};
+
+/**
+ * Phase 2: Preload deferred assets (chatbot avatar + audio)
+ * Called after page finishes loading — non-blocking
+ */
+export const preloadDeferredAssets = () => {
+  if (assetCache.isChatAssetsLoaded) return Promise.resolve();
+
+  const imagePromises = DEFERRED_IMAGE_SETS.flatMap((set) => loadImageSet(set, null));
 
   const audioPromises = AUDIO_FILES.map((id) => {
     return new Promise((resolve) => {
       const audio = new Audio();
       audio.src = `/assets/audio/chatbot/${id}.mp3`;
       
-      // We use oncanplaythrough for better "ready" state, 
-      // but since many might be missing, we also handle error
       audio.oncanplaythrough = () => {
         assetCache.audio[id] = audio;
-        updateProgress();
         resolve();
-        audio.oncanplaythrough = null; // Prevent multiple calls
+        audio.oncanplaythrough = null;
       };
 
       audio.onerror = () => {
         // Many audio files might not exist yet, we don't want to block
-        updateProgress();
         resolve();
       };
 
-      // Start loading
       audio.load();
     });
   });
 
   return Promise.all([...imagePromises, ...audioPromises]).then(() => {
-    console.log('[AssetLoader] All assets loaded successfully:', {
-      idle: assetCache.heroIdle.length,
-      move: assetCache.heroMove.length,
-      chat: assetCache.chatbotAvatar.length,
-      audio: Object.keys(assetCache.audio).length
+    console.log('[AssetLoader] Deferred assets loaded:', {
+      chat: assetCache.chatbotAvatar.filter(Boolean).length,
+      audio: Object.keys(assetCache.audio).length,
     });
-    assetCache.isLoaded = true;
+    assetCache.isChatAssetsLoaded = true;
     notifyListeners();
     return assetCache;
   });
