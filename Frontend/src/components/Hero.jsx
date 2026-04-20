@@ -66,9 +66,12 @@ export const AboutAvatar = ({ isVisible = false }) => {
 
 // ─────────────────────────────────────────────────────────────
 // HeroAvatar: Full lifecycle (idle loop → scroll scrub + move)
+// Uses viewport-relative positioning so the path is consistent
+// across ALL screen sizes (14", 16", ultrawide, etc.)
 // ─────────────────────────────────────────────────────────────
 const HeroAvatar = ({ scrollYProgress }) => {
   const canvasRef = useRef(null);
+  const wrapperRef = useRef(null);
   const frameRef = useRef(0); // current hero loop frame index
   const intervalRef = useRef(null);
   const [isReady, setIsReady] = useState(false);
@@ -146,32 +149,103 @@ const HeroAvatar = ({ scrollYProgress }) => {
       drawMove(moveFrame);
     }
   });
-  // ── Mobile detection for position adjustments ──
+
+  // ── Responsive travel-distance calculation ──
+  // Dynamically measure where the avatar needs to travel from hero → about profile card
+  // This ensures consistent positioning across ALL screen sizes
   const [isMobile, setIsMobile] = useState(false);
+  const [travelY, setTravelY] = useState({ mid: 400, end: 930 });
+  const [travelX, setTravelX] = useState({ mid: 30, end: 25 });
+  const [travelScale, setTravelScale] = useState({ s1: 0.7, s2: 0.35, s3: 0.45 });
+
   useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 1024);
-    check();
-    window.addEventListener('resize', check);
-    return () => window.removeEventListener('resize', check);
+    const calculatePath = () => {
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const mobile = vw < 1024;
+      setIsMobile(mobile);
+
+      if (mobile) {
+        // Mobile: stacked layout, shorter Y travel, no X drift
+        setTravelY({ mid: vh * 0.35, end: vh * 0.65 });
+        setTravelX({ mid: 0, end: 0 });
+        setTravelScale({ s1: 0.95, s2: 0.92, s3: 0.87 });
+        return;
+      }
+
+      // ── Desktop: dynamically measure start → end positions ──
+      const heroAvatar = wrapperRef.current;
+      const aboutCard = document.querySelector('[data-avatar-target="profile-card"]');
+      
+      if (heroAvatar && aboutCard) {
+        const heroRect = heroAvatar.getBoundingClientRect();
+        const aboutRect = aboutCard.getBoundingClientRect();
+        const scrollTop = window.scrollY || document.documentElement.scrollTop;
+
+        // Calculate actual pixel distance from hero avatar center to about card center
+        const heroCenterY = heroRect.top + scrollTop + heroRect.height / 2;
+        const aboutCenterY = aboutRect.top + scrollTop + aboutRect.height / 2;
+        const heroCenterX = heroRect.left + heroRect.width / 2;
+        const aboutCenterX = aboutRect.left + aboutRect.width / 2;
+
+        const deltaY = aboutCenterY - heroCenterY;
+        const deltaX = aboutCenterX - heroCenterX;
+
+        // The avatar path follows a smooth curve from hero→about
+        // Mid-point is ~50% of the journey
+        setTravelY({ mid: deltaY * 0.5, end: deltaY * 0.95 });
+        setTravelX({ mid: deltaX * 0.3, end: deltaX * 0.7 });
+      } else {
+        // Fallback: use viewport-relative values that scale with screen size
+        // These use vh/vw proportions instead of hardcoded pixels
+        setTravelY({ mid: vh * 0.4, end: vh * 0.75 });
+        setTravelX({ mid: vw * 0.025, end: vw * 0.025 });
+      }
+
+      // Scale down proportionally — larger screens need slightly larger end scale
+      // because the about card is physically larger
+      const scaleFactor = Math.max(0.8, Math.min(1, vw / 1536));
+      setTravelScale({
+        s1: 0.7 * scaleFactor,
+        s2: 0.5 * scaleFactor,
+        s3: 0.35 * scaleFactor,
+      });
+    };
+
+    // Initial calculation + debounced recalculation on resize
+    calculatePath();
+    // Recalculate after a short delay to ensure DOM is fully rendered
+    const initTimer = setTimeout(calculatePath, 500);
+
+    let resizeTimer;
+    const handleResize = () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(calculatePath, 150);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      clearTimeout(resizeTimer);
+      clearTimeout(initTimer);
+    };
   }, []);
 
-  // ── Scroll-driven positioning (mobile vs desktop) ──
-  // Mobile: shorter Y travel, no X drift, faster shrink
-  // Desktop: full descent to About section
+  // ── Scroll-driven positioning using dynamic values ──
   const avatarY = useTransform(
     scrollYProgress, 
     [0, 0.5, 1], 
-    isMobile ? [0, 300, 550] : [0, 400, 750]
+    isMobile ? [0, travelY.mid, travelY.end] : [0, travelY.mid, travelY.end]
   );
   const avatarX = useTransform(
     scrollYProgress, 
     [0, 0.5, 1], 
-    isMobile ? [0, 0, 0] : [0, 50, 50]
+    isMobile ? [0, 0, 0] : [0, travelX.mid, travelX.end]
   );
   const avatarScale = useTransform(
     scrollYProgress, 
     [0, 0.5, 0.8, 1], 
-    isMobile ? [1, 0.95, 0.92, 0.87] : [1, 0.7, 0.5, 0.35]
+    isMobile ? [1, 0.95, 0.92, 0.87] : [1, travelScale.s1, travelScale.s2, travelScale.s3]
   );
   const avatarOpacity = useTransform(
     scrollYProgress, 
@@ -181,6 +255,7 @@ const HeroAvatar = ({ scrollYProgress }) => {
 
   return (
     <Motion.div
+      ref={wrapperRef}
       style={{
         y: avatarY,
         x: avatarX,

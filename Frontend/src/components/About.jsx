@@ -203,7 +203,7 @@ const About = () => {
 
           {/* 2. Profile Node (First on mobile, Right on desktop) */}
           <SpotlightCard className="md:col-span-12 lg:col-span-3 lg:row-span-2 min-h-[400px] lg:min-h-full order-first lg:order-none">
-            <div ref={profileCardRef} className="relative h-full w-full group/img flex flex-col">
+            <div ref={profileCardRef} data-avatar-target="profile-card" className="relative h-full w-full group/img flex flex-col">
                <IdentificationBanner />
                <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
                   <Motion.div style={{ opacity: aboutAvatarOpacity }}>
