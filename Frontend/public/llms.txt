@@ -1,0 +1,47 @@
+# Arun Kushwaha - Full-Stack Developer & DevOps Engineer
+
+Arun Kushwaha is a Software Developer specializing in building scalable backend systems, low-latency architectures, and production-grade cloud services. He is a final-year B.Tech student at NIT Hamirpur.
+
+## Core Information
+- **Domain:** [arunkushwaha.xyz](https://arunkushwaha.xyz)
+- **Role:** Full-Stack Developer / DevOps / AI Systems
+- **Location:** Hamirpur, Himachal Pradesh, India
+- **Contact:** arunsk1310@gmail.com | +91-9555547363
+- **Socials:** [GitHub](https://github.com/Arun-kushwaha007) | [LinkedIn](https://www.linkedin.com/in/arun-kushwaha-394b5a340/) | [LeetCode](https://leetcode.com/u/ArunKush007/)
+
+## Technical Arsenal
+- **Languages:** JavaScript, TypeScript, Python, C++, SQL, Golang, Java, Bash
+- **Backend:** Node.js, Express, FastAPI, REST, GraphQL, WebSockets, Socket.IO
+- **Data & Infra:** MongoDB, PostgreSQL, Redis, Cloud SQL, GCS
+- **Cloud & DevOps:** GCP (Cloud Run, Document AI), AWS, Docker, Kubernetes, CI/CD
+- **Frontend:** React, Vite, Next.js, Tailwind CSS
+- **Core Concepts:** System Design, Performance Testing, Observability, RBAC, Microservices
+
+## Key Projects
+### Enterprise PDF to CSV Pipeline
+- High-throughput document processing pipeline using GCP Document AI.
+- Processes 5,000+ documents per batch with dynamic worker scaling (2→75 workers).
+- Optimized database performance with bulk transactional operations.
+
+### CollabNest - Real-Time Collaboration
+- Multi-tenant real-time task platform with RBAC and optimistic UI.
+- Sustained high load (100+ req/s) with 0% error rate and WebSocket stability.
+- Reduced DB reads by 60% via Redis caching.
+
+### AI FIR Analysis & Legal-Act Prediction
+- Retrieval-augmented LLM pipeline (RAG) for legal documents.
+- Ranked Top 10 at Rajasthan Police Hackathon 2024.
+
+### Resume Roaster
+- ATS optimization platform using LLMs for semantic parsing.
+- FastAPI backend with 95%+ accuracy.
+
+## Experience
+- **Software Developer Intern at CreditMitra:** Building fintech modules and third-party API integrations.
+- **Freelance Software Engineer (PDF Data Extraction):** Built production document pipelines with GCP.
+- **President at SPEC Society, NIT Hamirpur:** Led technical events and standardized dev processes.
+
+## Education
+- **B.Tech in Electronics & Communication at NIT Hamirpur (2022–2026)**
+- **CGPA:** 8.0/10.0
+- **Relevant Coursework:** Algorithms, OS, DBMS, Networking, System Design
