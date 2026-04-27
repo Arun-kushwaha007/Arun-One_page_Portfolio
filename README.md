@@ -2,6 +2,7 @@
 
 [![Live Demo: arunkushwaha.xyz](https://img.shields.io/badge/Live%20Demo-arunkushwaha.xyz-ff00ff?style=for-the-badge&logo=google-chrome&logoColor=white)](https://arunkushwaha.xyz)
 [![CI](https://github.com/Arun-kushwaha007/Arun-One_page_Portfolio/actions/workflows/ci.yml/badge.svg)](https://github.com/Arun-kushwaha007/Arun-One_page_Portfolio/actions/workflows/ci.yml)
+
 Cyberpunk-styled portfolio built with React and Vite. The site presents Arun Kushwaha's profile, experience, projects, skills, contact details, and a set of interactive UI systems including a browser terminal, chatbot assistant, animated overlays, and a Matrix-style easter egg.
 
 ![Portfolio Demo](Frontend/public/portfolio.gif)
@@ -67,15 +68,21 @@ npm run lint
 
 ## Tests
 
-The repo currently includes focused Node-based tests for the chatbot knowledge and voice-selection utilities:
+The repo includes focused Node-based tests for the chatbot knowledge and voice-selection utilities. Run them via:
 
 ```bash
 cd Frontend
+npm test
+```
+
+Or individually:
+
+```bash
 node src/components/chatbot/data/chatbotKnowledge.test.js
 node src/components/chatbot/data/chatbotVoice.test.js
 ```
 
-These are not yet wired into an npm script, so they are run directly with Node.
+Tests are also run automatically on every push and pull request via the CI workflow.
 
 ## Updating Portfolio Content
 
