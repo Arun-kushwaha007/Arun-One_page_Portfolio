@@ -1,3 +1,4 @@
+/* eslint-env node */
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -47,5 +48,6 @@ async function main() {
 
 main().catch((error) => {
   console.error(error instanceof Error ? error.message : error);
+  // eslint-disable-next-line no-undef
   process.exitCode = 1;
 });

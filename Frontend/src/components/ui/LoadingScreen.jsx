@@ -71,7 +71,7 @@ const LoadingScreen = ({ onComplete }) => {
       window.removeEventListener('touchstart', resumeAudioCtx);
       window.removeEventListener('keydown', resumeAudioCtx);
     };
-  }, []);
+  }, [onComplete]);
 
 
   // SVG circle params

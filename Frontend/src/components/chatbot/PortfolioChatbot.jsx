@@ -429,10 +429,6 @@ export default function PortfolioChatbot({ isOpen, onOpenChange }) {
     typeBotReply(intent);
   };
 
-  const handleCommandClick = (cmd) => {
-    setMessages((current) => [...current, createMessage('user', cmd.label, { isCommand: true })]);
-    sendMessage(cmd.command, true);
-  };
 
   const handleSubmit = (event) => {
     event.preventDefault();

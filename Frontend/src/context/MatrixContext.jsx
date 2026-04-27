@@ -24,4 +24,5 @@ export const MatrixProvider = ({ children }) => {
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useMatrix = () => useContext(MatrixContext);

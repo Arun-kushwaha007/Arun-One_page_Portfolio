@@ -7,6 +7,7 @@ const CursorContext = createContext({
   setCursorText: () => {},
 });
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useCursor = () => useContext(CursorContext);
 
 export default CursorContext;
