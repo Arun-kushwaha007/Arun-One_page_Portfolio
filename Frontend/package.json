@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "node src/components/chatbot/data/chatbotKnowledge.test.js && node src/components/chatbot/data/chatbotVoice.test.js"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.6",

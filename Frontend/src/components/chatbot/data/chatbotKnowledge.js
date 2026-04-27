@@ -1,4 +1,4 @@
-import { education, experiences, profile, projects, skills } from '../../../data/portfolio.js';
+import { profile } from '../../../data/portfolio.js';
 import { QUICK_COMMANDS } from './ChatbotConfig.js';
 
 function normalizeText(value = '') {
@@ -13,44 +13,9 @@ function scoreKeywords(normalizedInput, keywords = []) {
   }, 0);
 }
 
-function skillSummary() {
-  return Object.entries(skills)
-    .slice(0, 4)
-    .map(([category, config]) => `${category}: ${config.items.slice(0, 4).join(', ')}`)
-    .join('\n');
-}
-
-function projectReply(project) {
-  const links = [
-    project.links?.github ? `GitHub: ${project.links.github}` : null,
-    project.links?.demo ? `Demo: ${project.links.demo}` : null,
-  ]
-    .filter(Boolean)
-    .join('\n');
-
-  return `${project.title}
-
-${project.description}
-
-Tech: ${project.tech.join(', ')}
-
-Highlights:
-- ${project.points.join('\n- ')}
-${links ? `\n\n${links}` : ''}`;
-}
-
-function projectKeywords(project) {
-  return [
-    project.id,
-    project.title,
-    project.description,
-    ...project.tech,
-    ...project.points,
-  ];
-}
 
 export function buildKnowledgeBase() {
-  const commonFollowUps = ['projects', 'stack', 'experience', 'contact'];
+
   const projectFollowUps = ['project-pdf-csv-pipeline', 'project-collabnest', 'project-ai-fir', 'project-resume-roaster', 'project-self-driving-car'];
 
   const projectEntries = [

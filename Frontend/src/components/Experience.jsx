@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { experiences } from '../data/portfolio';
-import { motion, useScroll, useTransform, useSpring } from 'framer-motion';
+import { motion, useScroll, useTransform } from 'framer-motion';
 import GlitchText from './ui/GlitchText';
 
 const ExperienceCard = ({ exp, index }) => {
