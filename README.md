@@ -120,8 +120,8 @@ Interactive assistant responses are derived from the chatbot data layer under:
 
 ## Contribution Notes
 
-Arun Kushwaha is the primary author and maintainer of this project. If you want to report an issue or contribute a fix, follow the process documented in [CONTRIBUTING.md](/D:/ak/New%20folder/Arun-One_page_Portfolio/CONTRIBUTING.md).
+Arun Kushwaha is the primary author and maintainer of this project. If you want to report an issue or contribute a fix, follow the process documented in [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ## License
 
-This project is released under the [MIT License](/D:/ak/New%20folder/Arun-One_page_Portfolio/LICENSE).
+This project is released under the [MIT License](./LICENSE).
