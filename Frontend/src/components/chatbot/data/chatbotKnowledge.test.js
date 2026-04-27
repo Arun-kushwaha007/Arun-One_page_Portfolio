@@ -6,12 +6,12 @@ const knowledgeBase = buildKnowledgeBase();
 
 const collabnestEntry = knowledgeBase.projectEntries.find((entry) => entry.id === 'project-collabnest');
 assert.ok(collabnestEntry);
-assert.match(collabnestEntry.reply, /CollabNest/i);
+assert.match(collabnestEntry.reply, /Collab-?Nest/i);
 assert.match(collabnestEntry.reply, /Redis/i);
 
-const projectIntent = resolvePortfolioIntent('tell me about collabnest and realtime work', knowledgeBase);
+const projectIntent = resolvePortfolioIntent('tell me about collab-nest and real-time work', knowledgeBase);
 assert.equal(projectIntent.id, 'project-collabnest');
-assert.match(projectIntent.reply, /CollabNest/i);
+assert.match(projectIntent.reply, /Collab-?Nest/i);
 
 const fallbackIntent = resolvePortfolioIntent('what is your favorite movie', knowledgeBase);
 assert.equal(fallbackIntent.id, 'fallback');
